@@ -1,0 +1,35 @@
+{
+  "name": "minteragent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "dev": "nodemon dotenv --trace-warnings build/index.js",
+    "build": "npx tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlOaks/minter-agent.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AlOaks/minter-agent/issues"
+  },
+  "homepage": "https://github.com/AlOaks/minter-agent#readme",
+  "dependencies": {
+    "axios": "^1.2.2",
+    "dotenv": "^16.0.3",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.4",
+    "xrpl": "^2.7.0-beta.0"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.191",
+    "nodemon": "^2.0.20",
+    "typescript": "^4.9.4"
+  }
+}
