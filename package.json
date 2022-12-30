@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "dev": "nodemon dotenv --trace-warnings build/index.js",
+    "test": "node test.js",
+    "start": "node build/index.js",
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon dotenv --trace-warnings build/index.js\"",
     "build": "npx tsc"
   },
   "repository": {
@@ -21,7 +21,9 @@
   },
   "homepage": "https://github.com/AlOaks/minter-agent#readme",
   "dependencies": {
+    "@types/node": "^18.11.18",
     "axios": "^1.2.2",
+    "concurrently": "^7.6.0",
     "dotenv": "^16.0.3",
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
