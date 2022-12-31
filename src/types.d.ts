@@ -1,18 +1,20 @@
-export interface WalletInterface {
+type NFTCategoryType = "art" | "motion" | "music" | "metaverse" | "sports" | "others" | "tradingcards" | "collectibles"
+
+interface WalletInterface {
   address: string;
   seed: string;
 }
 
-export interface SignTransactionOptions {
+interface SignTransactionOptions {
   autofill?: boolean;
   withClient?: boolean;
 }
-export interface NFTokenMintResult {
+interface NFTokenMintResult {
   mint_tx_hash: string;
   NFTokenID: string;
 }
 
-export interface CollectionData {
+interface CollectionData {
   name: string;
   cover?: Buffer;
   thumbnail?: Buffer;
@@ -20,7 +22,7 @@ export interface CollectionData {
   transfer_fee?: number;
 }
 
-export interface BurnConfiguration {
+interface BurnConfiguration {
   burn_amount: string | number;
   burn_amount_issuance?: string | number;
   burn_amount_market_index?: string | number;
@@ -28,7 +30,7 @@ export interface BurnConfiguration {
   burn_issuer: string;
 }
 
-export interface BurnResult {
+interface BurnResult {
   address: string;
   hash: string;
   type?: string;
@@ -36,22 +38,22 @@ export interface BurnResult {
   validated?: boolean;
 }
 
-export interface NFTSlot {
+interface NFTSlot {
   uid: string;
   [key: string]: unknown;
 }
 
-export interface NFTAttribute {
+interface NFTAttribute {
   trait_type: string;
   value: string | number;
   max_value?: string | number;
 }
 
-export interface NFTPayload {
+interface NFTPayload {
   file: Buffer;
   thumbnail: Buffer;
   name: string;
-  category: string;
+  category: NFTCategoryType;
   is_explicit: boolean;
   only_xrp: boolean;
   transfer_fee?: number; // A number between 0 and 50000 i.e to get 10% royalty transfer_fee must be 10000
@@ -60,13 +62,13 @@ export interface NFTPayload {
   attributes?: NFTAttribute[];
 }
 
-export interface SologenicMinterProps {
+interface SologenicMinterProps {
   wallet: WalletInterface;
   apiUrl: string;
   xrpl_node: string;
 }
 
-export interface Collection {
+interface Collection {
   uid: string;
   issuer: string;
   nfts: NFTSlot[];
