@@ -1,5 +1,14 @@
-import SologenicMinter from "./agent";
-import { categories as cats } from "./agent/utils";
+import SologenicMinter from "./agent/index.js";
 
-export const categories: any = cats;
+export const categories = {
+  art: "art",
+  motion: "motion",
+  music: "music",
+  metaverse: "metaverse",
+  sports: "sports",
+  others: "others",
+  trading_cards: "tradingcards",
+  collectibles: "collectibles",
+};
+
 export default SologenicMinter;

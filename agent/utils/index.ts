@@ -1,4 +1,5 @@
 import { decodeAccountID } from "xrpl";
+import { fileTypeFromBuffer } from "file-type";
 
 export const categories = [
   "art",
@@ -10,6 +11,7 @@ export const categories = [
   "tradingcards",
   "collectibles",
 ];
+
 // Helper function to convert to Hex
 export const toHex = (string: string): string => {
   const s = unescape(encodeURIComponent(string));
@@ -57,3 +59,11 @@ export const encodeNFTTokenID = (
     encodedSequence
   );
 };
+
+export async function getBase64(file: Buffer): Promise<any> {
+  const fileType: any = await fileTypeFromBuffer(file);
+
+  const dataPrefix = `data:${fileType.mime};base64,`;
+
+  return dataPrefix + file.toString("base64");
+}

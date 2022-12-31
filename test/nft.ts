@@ -1,10 +1,17 @@
-import file from "./file";
+import fs from "fs";
+import path from "path";
+
+const __dirname = path.resolve();
+
+const buffer = fs.readFileSync(
+  path.join(__dirname + "/build/public/test_imgs/test-image.png")
+);
 
 export default {
-  file,
-  thumbnail: file,
+  file: buffer,
+  thumbnail: buffer,
   name: "Testing NFT 3",
-  category: "arts",
+  category: "art",
   only_xrp: false,
   is_explicit: false,
   transfer_fee: 10000,

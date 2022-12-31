@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "module": "commonjs",
+    "module": "node16",
     "rootDir": "./",
     "outDir": "./build",
     "esModuleInterop": true,
-    "strict": true
+    "strict": true,
+    "declaration": true
   },
   "exclude": ["test"]
 }

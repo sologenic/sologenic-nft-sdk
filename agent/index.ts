@@ -1,30 +1,38 @@
-import {
+import xrpl, {
   Transaction,
   Client,
-  Wallet,
   xrpToDrops,
   AccountInfoResponse,
+  TxResponse,
 } from "xrpl";
 import moment from "moment";
 import axios from "axios";
-import { categories, encodeNFTTokenID, toHex } from "./utils";
 import {
-  WalletInterface,
+  categories,
+  // categoriesObject,
+  encodeNFTTokenID,
+  getBase64,
+  toHex,
+} from "./utils/index.js";
+import {
   SologenicMinterProps,
   Collection,
   NFTPayload,
   NFTSlot,
   SignTransactionOptions,
   NFTokenMintResult,
-} from "./types";
+  CollectionData,
+  BurnConfiguration,
+  BurnResult,
+} from "./types/index.js";
 
 export default class SologenicMinter {
-  xrplClient: Client;
+  private _xrplClient: Client;
   private _collectionAddress: string | undefined;
   private _collectionData: Collection | undefined;
   private _apiUrl: string;
-
-  private wallet: WalletInterface;
+  private _wallet: xrpl.Wallet;
+  // readonly categories: any = categoriesObject;
 
   constructor(props: SologenicMinterProps) {
     if (!props.wallet) throw new Error("Wallet missing on constructor props.");
@@ -32,11 +40,19 @@ export default class SologenicMinter {
     if (!props.xrpl_node)
       throw new Error("XRPL Node missing on constructor props.");
 
-    this.xrplClient = new Client(props.xrpl_node);
-    this.wallet = props.wallet;
+    this._xrplClient = new Client(props.xrpl_node);
+    this._wallet = xrpl.Wallet.fromSecret(props.wallet.seed);
     this._apiUrl = props.apiUrl;
 
     console.info("Sologenic Minter Initialized");
+  }
+
+  getApiURL(): string {
+    return this._apiUrl;
+  }
+
+  getWalletAddress(): string {
+    return this._wallet.classicAddress;
   }
 
   getCollectionAddress(): string | undefined {
@@ -47,10 +63,163 @@ export default class SologenicMinter {
     return this._collectionData?.nfts;
   }
 
+  getCollectionData(): Collection | undefined {
+    return this._collectionData;
+  }
+
+  async getAllCollections(): Promise<Collection[]> {
+    try {
+      const collections: Collection[] = await axios({
+        method: "get",
+        headers: {
+          authorization: await this._generateAuthToken(),
+          address: this._wallet.classicAddress,
+        },
+        baseURL: `${this._apiUrl}/collection/all`,
+      })
+        .then((r) => {
+          const colls: Collection[] = r.data.response.map((c: Collection) => {
+            delete c.locked_at;
+            delete c.minted_at;
+            delete c.only_xrp;
+            delete c.minted;
+
+            return c;
+          });
+
+          return colls;
+        })
+        .catch((e) => {
+          throw e;
+        });
+
+      return collections;
+    } catch (e: any) {
+      console.error(e);
+      throw e;
+    }
+  }
+
+  async generateNFTSlots(amount: number): Promise<BurnResult> {
+    try {
+      await this._xrplClient.connect();
+      const burnConfig = await this.getBurnConfiguration();
+
+      const payment_tx: Transaction = {
+        Account: this._wallet.classicAddress,
+        TransactionType: "Payment",
+        Amount: {
+          currency: burnConfig.burn_currency,
+          issuer: burnConfig.burn_issuer,
+          value: String(amount * Number(burnConfig.burn_amount)),
+        },
+        Destination: burnConfig.burn_issuer,
+        Memos: [
+          {
+            Memo: {
+              MemoData: toHex(JSON.stringify({ type: "mint" })),
+            },
+          },
+        ],
+      };
+
+      const signed_payment = await this._signTransaction(payment_tx, {
+        autofill: true,
+        withClient: false,
+      });
+
+      const result: TxResponse = await this._submitSignedTxToLedger(
+        signed_payment
+      );
+
+      const burn_result: BurnResult = await this._submitBurnTxHash(
+        result.result.hash
+      );
+
+      if (this._collectionAddress)
+        this._collectionData = await this._getCollectionData();
+
+      delete burn_result.type;
+      delete burn_result.validated;
+
+      return burn_result;
+    } catch (e: any) {
+      console.error(e);
+      throw e;
+    }
+  }
+
+  async createCollection(collectionData: CollectionData): Promise<Collection> {
+    try {
+      const new_collection: Collection = await axios({
+        method: "post",
+        baseURL: `${this._apiUrl}/collection/assemble`,
+        headers: {
+          authorization: await this._generateAuthToken(),
+          address: this._wallet.classicAddress,
+        },
+      })
+        .then((r) => r.data.response)
+        .catch((e) => {
+          throw e;
+        });
+
+      await this.setCollectionAddress(new_collection.issuer);
+      await this.updateCollection({ ...collectionData });
+
+      return this._collectionData as Collection;
+    } catch (e: any) {
+      console.error(e);
+      throw e;
+    }
+  }
+
+  async updateCollection(collectionData: CollectionData): Promise<void> {
+    try {
+      if (!this._collectionData)
+        throw new Error("Need to set a collection address first.");
+
+      await axios({
+        method: "post",
+        baseURL: `${this._apiUrl}/collection/cover`,
+        data: {
+          ...collectionData,
+          ...(collectionData.cover
+            ? { cover: await getBase64(collectionData.cover) }
+            : { cover: "" }),
+          ...(collectionData.thumbnail
+            ? { thumbnail: await getBase64(collectionData.thumbnail) }
+            : { thumbnail: "" }),
+          uid: this._collectionData.uid,
+          issuer: this._collectionAddress,
+        },
+        headers: {
+          authorization: await this._generateAuthToken(),
+          address: this._wallet.classicAddress,
+        },
+      })
+        .then((r) => r.data.response.updated)
+        .catch((e) => {
+          if (
+            e.response.data.response.error.message === "invalid_issuing_address"
+          )
+            throw new Error(
+              "This collection has been finalized, cannot be updated anymore."
+            );
+
+          throw e;
+        });
+
+      this._collectionData = await this._getCollectionData();
+    } catch (e: any) {
+      console.error(e);
+      throw e;
+    }
+  }
+
   async setCollectionAddress(address: string): Promise<void> {
     this._collectionAddress = address;
-    this._collectionData = undefined;
-    await this._getCollectionData();
+    this._collectionData = await this._getCollectionData();
   }
 
   async mint(nftData: NFTPayload): Promise<NFTokenMintResult> {
@@ -76,7 +245,10 @@ export default class SologenicMinter {
       const mintTx = await this._prepareMintTransaction(uploaded_nft_uid);
 
       // Sign NFTokenMint Transaction
-      const tx_blob = await this._signTransaction(mintTx, { autofill: true });
+      const tx_blob = await this._signTransaction(mintTx, {
+        autofill: true,
+        withClient: true,
+      });
 
       // Submit Signed Transaction and receive nftoken_id of submitted transaction
       const nft_result = await this._submitSignedMintTx(
@@ -85,6 +257,87 @@ export default class SologenicMinter {
       );
 
       return nft_result;
+    } catch (e: any) {
+      // console.error(e);
+      throw e;
+    }
+  }
+
+  async getBurnConfiguration(): Promise<BurnConfiguration> {
+    try {
+      console.error("Getting Burn Configuration...");
+      const burn_config = await axios({
+        method: "get",
+        baseURL: `${this._apiUrl}/solo/burn_config`,
+      })
+        .then((r) => r.data)
+        .catch((e) => {
+          throw e;
+        });
+
+      delete burn_config.burn_amount_issuance;
+      delete burn_config.burn_amount_market_index;
+
+      return burn_config;
+    } catch (e: any) {
+      console.error(e);
+      throw e;
+    }
+  }
+
+  // Private Methods
+  private _getEmptyNFTSlot(): NFTSlot {
+    console.info("Getting next available NFT slot");
+    if (this._collectionData?.nfts.length === 0)
+      throw new Error("No NFT Slots available");
+
+    const nft_slot: NFTSlot | undefined = this._collectionData?.nfts.find(
+      (slot: NFTSlot) => slot.currency === null
+    );
+
+    if (!nft_slot) throw new Error("No NFT Slots available");
+
+    return nft_slot;
+  }
+
+  private async _submitBurnTxHash(tx_hash: string): Promise<BurnResult> {
+    try {
+      const response: BurnResult = await axios({
+        method: "post",
+        baseURL: `${this._apiUrl}/solo/burn`,
+        headers: {
+          authorization: await this._generateAuthToken(),
+          address: this._wallet.classicAddress,
+        },
+        data: {
+          hash: tx_hash,
+          type: "mint",
+        },
+      })
+        .then((r) => {
+          return r.data;
+        })
+        .catch((e) => {
+          throw e;
+        });
+
+      return response;
+    } catch (e: any) {
+      console.error(e);
+      throw e;
+    }
+  }
+
+  private async _submitSignedTxToLedger(tx_blob: string): Promise<TxResponse> {
+    try {
+      console.info("Submitting Transaction to the Ledger...");
+      await this._checkConnection();
+
+      const result: TxResponse = await this._xrplClient.submitAndWait(tx_blob, {
+        wallet: this._wallet,
+      });
+
+      return result;
     } catch (e: any) {
       console.error(e);
       throw e;
@@ -107,16 +360,18 @@ export default class SologenicMinter {
         },
         headers: {
           authorization: await this._generateAuthToken(),
-          address: this.wallet.address,
+          address: this._wallet.classicAddress,
         },
       })
         .then(async (r) => {
-          await this.xrplClient.connect();
+          await this._xrplClient.connect();
 
-          const tx: any = await this.xrplClient.request({
+          const tx: any = await this._xrplClient.request({
             command: "tx",
             transaction: r.data.response.hash,
           });
+
+          console.log("TX RESULT =>", tx);
 
           const nftsequence = tx.result.meta.AffectedNodes.find((an: any) => {
             if (
@@ -158,18 +413,15 @@ export default class SologenicMinter {
     try {
       console.info("Signing TX => ", tx);
       // Instantiate a Wallet to sign with
-      const wallet = Wallet.fromSecret(this.wallet.seed);
-
       if (options?.autofill) {
-        await this.xrplClient.connect();
+        if (options.withClient) await this._checkConnection();
 
-        const account_info: AccountInfoResponse = await this.xrplClient.request(
-          {
+        const account_info: AccountInfoResponse =
+          await this._xrplClient.request({
             command: "account_info",
-            account: this.wallet.address,
+            account: this._wallet.classicAddress,
             ledger_index: "current",
-          }
-        );
+          });
 
         const current_ledger_sequence: number = account_info.result
           .ledger_current_index as number;
@@ -180,12 +432,10 @@ export default class SologenicMinter {
         tx.LastLedgerSequence = current_ledger_sequence + 15;
         tx.Fee = xrpToDrops(0.001);
         tx.Sequence = current_account_sequence;
-
-        await this.xrplClient.disconnect();
       }
 
       // Sign the Transaction and get tx_blob
-      const { tx_blob } = wallet.sign(tx);
+      const { tx_blob } = this._wallet.sign(tx);
 
       return tx_blob;
     } catch (e: any) {
@@ -202,7 +452,7 @@ export default class SologenicMinter {
         method: "post",
         headers: {
           authorization: await this._generateAuthToken(),
-          address: this.wallet.address,
+          address: this._wallet.classicAddress,
         },
         data: {
           uid: nftUID,
@@ -224,22 +474,31 @@ export default class SologenicMinter {
     try {
       console.info("Uploading NFT data...");
       const nftSlot: NFTSlot = this._getEmptyNFTSlot();
+      console.log("Using NFT Slot => ", nftSlot);
 
-      const nftUploaded: any = await axios({
+      await axios({
         baseURL: `${this._apiUrl}/nft/upload`,
         method: "post",
         headers: {
           authorization: await this._generateAuthToken(),
-          address: this.wallet.address,
+          address: this._wallet.classicAddress,
         },
         data: {
           issuer: this._collectionAddress,
-          payload: nftData,
+          payload: {
+            ...nftData,
+            file: await getBase64(nftData.file),
+            thumbnail: await getBase64(nftData.thumbnail),
+          },
           uid: nftSlot.uid,
         },
-      });
+      })
+        .then((r) => r.data)
+        .catch((e) => {
+          console.log("UPLOAD NFT", e.response.data.response.data);
 
-      if (nftUploaded.status !== 200) throw new Error(nftUploaded.data);
+          throw e;
+        });
 
       return nftSlot.uid;
     } catch (e: any) {
@@ -261,7 +520,7 @@ export default class SologenicMinter {
         },
         headers: {
           authorization: await this._generateAuthToken(),
-          address: this.wallet.address,
+          address: this._wallet.classicAddress,
         },
       });
 
@@ -274,7 +533,7 @@ export default class SologenicMinter {
     }
   }
 
-  private async _getCollectionData(): Promise<void> {
+  private async _getCollectionData(): Promise<Collection> {
     try {
       console.info("Getting Collection Data...");
 
@@ -283,7 +542,7 @@ export default class SologenicMinter {
         method: "post",
         headers: {
           authorization: await this._generateAuthToken(),
-          address: this.wallet.address,
+          address: this._wallet.classicAddress,
         },
         data: { issuer: this._collectionAddress },
       })
@@ -292,32 +551,25 @@ export default class SologenicMinter {
           throw e;
         });
 
-      this._collectionData = collection;
+      delete collection.activated;
+      delete collection.activation_fee;
+      delete collection.burn_amount;
+      delete collection.burn_address;
+      delete collection.burn_currency;
+
+      // this._collectionData = collection;
+      return collection;
     } catch (e: any) {
       console.error(e);
       throw e;
     }
   }
 
-  private _getEmptyNFTSlot(): NFTSlot {
-    console.info("Getting next available NFT slot");
-    if (this._collectionData?.nfts.length === 0)
-      throw new Error("No NFT Slots available");
-
-    const nft_slot: NFTSlot | undefined = this._collectionData?.nfts.find(
-      (slot) => slot.currency === null
-    );
-
-    if (!nft_slot) throw new Error("No NFT Slots available");
-
-    return nft_slot;
-  }
-
   private async _generateAuthToken(): Promise<string> {
     console.info("Generating Authentication Token");
     // Transaction to sign
     const tx: Transaction = {
-      Account: this.wallet.address,
+      Account: this._wallet.classicAddress,
       TransactionType: "AccountSet",
       Memos: [
         {
@@ -334,5 +586,14 @@ export default class SologenicMinter {
 
     // Return tx_blob
     return tx_blob;
+  }
+
+  private async _checkConnection(): Promise<void> {
+    try {
+      if (!this._xrplClient.isConnected()) await this._xrplClient.connect();
+    } catch (e: any) {
+      console.error(e);
+      throw e;
+    }
   }
 }

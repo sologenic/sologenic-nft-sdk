@@ -5,10 +5,35 @@ export interface WalletInterface {
 
 export interface SignTransactionOptions {
   autofill?: boolean;
+  withClient?: boolean;
 }
 export interface NFTokenMintResult {
   mint_tx_hash: string;
   NFTokenID: string;
+}
+
+export interface CollectionData {
+  name: string;
+  cover?: Buffer;
+  thumbnail?: Buffer;
+  description?: string;
+  transfer_fee?: number;
+}
+
+export interface BurnConfiguration {
+  burn_amount: string | number;
+  burn_amount_issuance?: string | number;
+  burn_amount_market_index?: string | number;
+  burn_currency: string;
+  burn_issuer: string;
+}
+
+export interface BurnResult {
+  address: string;
+  hash: string;
+  type?: string;
+  burns_count: number;
+  validated?: boolean;
 }
 
 export interface NFTSlot {
@@ -23,8 +48,8 @@ export interface NFTAttribute {
 }
 
 export interface NFTPayload {
-  file: string;
-  thumbnail: string;
+  file: Buffer;
+  thumbnail: Buffer;
   name: string;
   category: string;
   is_explicit: boolean;
