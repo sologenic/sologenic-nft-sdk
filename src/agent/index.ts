@@ -1,13 +1,26 @@
 import {
+  Collection,
+  SologenicMinterProps,
+  CollectionData,
+  NFTSlot,
+  NFTokenMintResult,
+  NFTPayload,
+  BurnResult,
+  BurnConfiguration,
+  SignTransactionOptions,
+} from "../types";
+
+import {
   Transaction,
   Client,
   xrpToDrops,
   AccountInfoResponse,
   TxResponse,
   Wallet,
+  decode,
 } from "xrpl";
 import moment from "moment";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { encodeNFTTokenID, getBase64, toHex } from "../utils";
 
 export class SologenicMinter {
@@ -16,16 +29,20 @@ export class SologenicMinter {
   private _collectionData: Collection | undefined;
   private _apiUrl: string;
   private _wallet: Wallet;
+  private _authHeaders: any;
 
   constructor(props: SologenicMinterProps) {
-    if (!props.wallet) throw new Error("Wallet missing on constructor props.");
+    if (!props.seed) throw new Error("Wallet missing on constructor props.");
     if (!props.apiUrl) throw new Error("Api URL missing on constructor props.");
     if (!props.xrpl_node)
       throw new Error("XRPL Node missing on constructor props.");
 
     this._xrplClient = new Client(props.xrpl_node);
-    this._wallet = Wallet.fromSecret(props.wallet.seed);
+    this._wallet = Wallet.fromSecret(props.seed);
     this._apiUrl = props.apiUrl;
+
+    this._setAuthHeaders();
+    setInterval(this._setAuthHeaders.bind(this), 60000);
 
     console.info("Sologenic Minter Initialized");
   }
@@ -52,12 +69,9 @@ export class SologenicMinter {
 
   async getAllCollections(): Promise<Collection[]> {
     try {
-      const collections: Collection[] = await axios({
+      const collections: Promise<Collection[]> = axios({
         method: "get",
-        headers: {
-          authorization: await this._generateAuthToken(),
-          address: this._wallet.classicAddress,
-        },
+        headers: this._authHeaders,
         baseURL: `${this._apiUrl}/collection/all`,
       })
         .then((r) => {
@@ -78,7 +92,6 @@ export class SologenicMinter {
 
       return collections;
     } catch (e: any) {
-      console.error(e);
       throw e;
     }
   }
@@ -86,7 +99,7 @@ export class SologenicMinter {
   async generateNFTSlots(amount: number): Promise<BurnResult> {
     try {
       await this._xrplClient.connect();
-      const burnConfig = await this.getBurnConfiguration();
+      const burnConfig: BurnConfiguration = await this.getBurnConfiguration();
 
       const payment_tx: Transaction = {
         Account: this._wallet.classicAddress,
@@ -106,9 +119,8 @@ export class SologenicMinter {
         ],
       };
 
-      const signed_payment = await this._signTransaction(payment_tx, {
+      const signed_payment: string = await this._signTransaction(payment_tx, {
         autofill: true,
-        withClient: false,
       });
 
       const result: TxResponse = await this._submitSignedTxToLedger(
@@ -137,10 +149,7 @@ export class SologenicMinter {
       const new_collection: Collection = await axios({
         method: "post",
         baseURL: `${this._apiUrl}/collection/assemble`,
-        headers: {
-          authorization: await this._generateAuthToken(),
-          address: this._wallet.classicAddress,
-        },
+        headers: this._authHeaders,
       })
         .then((r) => r.data.response)
         .catch((e) => {
@@ -148,11 +157,10 @@ export class SologenicMinter {
         });
 
       await this.setCollectionAddress(new_collection.issuer);
-      await this.updateCollection({ ...collectionData });
+      await this.updateCollection(collectionData);
 
       return this._collectionData as Collection;
     } catch (e: any) {
-      console.error(e);
       throw e;
     }
   }
@@ -176,10 +184,7 @@ export class SologenicMinter {
           uid: this._collectionData.uid,
           issuer: this._collectionAddress,
         },
-        headers: {
-          authorization: await this._generateAuthToken(),
-          address: this._wallet.classicAddress,
-        },
+        headers: this._authHeaders,
       })
         .then((r) => r.data.response.updated)
         .catch((e) => {
@@ -195,7 +200,6 @@ export class SologenicMinter {
 
       this._collectionData = await this._getCollectionData();
     } catch (e: any) {
-      console.error(e);
       throw e;
     }
   }
@@ -207,7 +211,6 @@ export class SologenicMinter {
 
   async mint(nftData: NFTPayload): Promise<NFTokenMintResult> {
     try {
-
       console.info("Starting minting process...");
       // If collection address has not been set, throw error
       if (!this._collectionAddress) throw new Error("Collection not set");
@@ -215,27 +218,31 @@ export class SologenicMinter {
       // Upload NFT Data
       const uploaded_nft_uid: string = await this._uploadNFTData(nftData);
 
+      console.log(uploaded_nft_uid);
+
       // Make sure collection is shipped
       await this._shipCollection();
 
       // Request NFTokenMint Transaction
-      const mintTx = await this._prepareMintTransaction(uploaded_nft_uid);
+      const mintTx: Transaction = await this._prepareMintTransaction(
+        uploaded_nft_uid
+      );
 
       // Sign NFTokenMint Transaction
-      const tx_blob = await this._signTransaction(mintTx, {
+      const tx_blob: string = await this._signTransaction(mintTx, {
         autofill: true,
-        withClient: true,
       });
 
       // Submit Signed Transaction and receive nftoken_id of submitted transaction
-      const nft_result = await this._submitSignedMintTx(
+      const nft_result: NFTokenMintResult = await this._submitSignedMintTx(
         tx_blob,
         uploaded_nft_uid
       );
 
+      this._collectionData = await this._getCollectionData();
+
       return nft_result;
     } catch (e: any) {
-      // console.error(e);
       throw e;
     }
   }
@@ -243,7 +250,7 @@ export class SologenicMinter {
   async getBurnConfiguration(): Promise<BurnConfiguration> {
     try {
       console.error("Getting Burn Configuration...");
-      const burn_config = await axios({
+      const burn_config: BurnConfiguration = await axios({
         method: "get",
         baseURL: `${this._apiUrl}/solo/burn_config`,
       })
@@ -279,13 +286,10 @@ export class SologenicMinter {
 
   private async _submitBurnTxHash(tx_hash: string): Promise<BurnResult> {
     try {
-      const response: BurnResult = await axios({
+      const response: Promise<BurnResult> = axios({
         method: "post",
         baseURL: `${this._apiUrl}/solo/burn`,
-        headers: {
-          authorization: await this._generateAuthToken(),
-          address: this._wallet.classicAddress,
-        },
+        headers: this._authHeaders,
         data: {
           hash: tx_hash,
           type: "mint",
@@ -328,17 +332,14 @@ export class SologenicMinter {
     try {
       console.info("Submitting Signed Transaction =>", tx_blob);
 
-      const tx_hash: NFTokenMintResult = await axios({
+      const tx_hash: Promise<NFTokenMintResult> = axios({
         baseURL: `${this._apiUrl}/nft/mint`,
         method: "post",
         data: {
           mint_tx_blob: tx_blob,
           uid: nft_uid,
         },
-        headers: {
-          authorization: await this._generateAuthToken(),
-          address: this._wallet.classicAddress,
-        },
+        headers: this._authHeaders,
       })
         .then(async (r) => {
           await this._xrplClient.connect();
@@ -391,7 +392,7 @@ export class SologenicMinter {
       console.info("Signing TX => ", tx);
       // Instantiate a Wallet to sign with
       if (options?.autofill) {
-        if (options.withClient) await this._checkConnection();
+        await this._checkConnection();
 
         const account_info: AccountInfoResponse =
           await this._xrplClient.request({
@@ -427,22 +428,19 @@ export class SologenicMinter {
       const mint_transaction: Transaction = await axios({
         baseURL: `${this._apiUrl}/nft/prepareMint`,
         method: "post",
-        headers: {
-          authorization: await this._generateAuthToken(),
-          address: this._wallet.classicAddress,
-        },
+        headers: this._authHeaders,
         data: {
           uid: nftUID,
         },
       })
         .then((r) => r.data.response.tx)
         .catch((e) => {
+          console.error(e.response.data.response);
           throw e;
         });
 
       return mint_transaction;
     } catch (e: any) {
-      console.error(e);
       throw e;
     }
   }
@@ -456,10 +454,7 @@ export class SologenicMinter {
       await axios({
         baseURL: `${this._apiUrl}/nft/upload`,
         method: "post",
-        headers: {
-          authorization: await this._generateAuthToken(),
-          address: this._wallet.classicAddress,
-        },
+        headers: this._authHeaders,
         data: {
           issuer: this._collectionAddress,
           payload: {
@@ -472,8 +467,6 @@ export class SologenicMinter {
       })
         .then((r) => r.data)
         .catch((e) => {
-          console.log("UPLOAD NFT", e.response.data.response.data);
-
           throw e;
         });
 
@@ -488,17 +481,14 @@ export class SologenicMinter {
     try {
       console.info("Shipping Collection...");
 
-      const shipped = await axios({
+      const shipped: AxiosResponse = await axios({
         baseURL: `${this._apiUrl}/collection/ship`,
         method: "post",
         data: {
           issuer: this._collectionAddress,
           standard: "xls20d",
         },
-        headers: {
-          authorization: await this._generateAuthToken(),
-          address: this._wallet.classicAddress,
-        },
+        headers: this._authHeaders,
       });
 
       if (shipped.data?.response?.shipped) return true;
@@ -514,13 +504,10 @@ export class SologenicMinter {
     try {
       console.info("Getting Collection Data...");
 
-      const collection = await axios({
+      const collection: Collection = await axios({
         url: `${this._apiUrl}/collection/assemble`,
         method: "post",
-        headers: {
-          authorization: await this._generateAuthToken(),
-          address: this._wallet.classicAddress,
-        },
+        headers: this._authHeaders,
         data: { issuer: this._collectionAddress },
       })
         .then((res) => res.data.response)
@@ -534,16 +521,21 @@ export class SologenicMinter {
       delete collection.burn_address;
       delete collection.burn_currency;
 
-      // this._collectionData = collection;
       return collection;
     } catch (e: any) {
-      console.error(e);
       throw e;
     }
   }
 
-  private async _generateAuthToken(): Promise<string> {
-    console.info("Generating Authentication Token");
+  private _setAuthHeaders(): void {
+    this._authHeaders = {
+      authorization: this._generateAuthToken(),
+      address: this._wallet.classicAddress,
+    };
+  }
+
+  private _generateAuthToken(): string {
+    console.info("Generating Authentication Token...");
     // Transaction to sign
     const tx: Transaction = {
       Account: this._wallet.classicAddress,
@@ -559,7 +551,7 @@ export class SologenicMinter {
       ],
     };
 
-    const tx_blob = await this._signTransaction(tx);
+    const { tx_blob } = this._wallet.sign(tx);
 
     // Return tx_blob
     return tx_blob;

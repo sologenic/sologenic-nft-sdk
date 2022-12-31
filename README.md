@@ -34,10 +34,7 @@ import fs from "fs";
 const minter = new SologenicMinter({
   apiUrl: SOLOGENIC_API_URL,
   xrpl_node: XRPL_NODE,
-  wallet: {
-    address: YOUR_WALLET_ADDRESS,
-    seed: YOUR_WALLET_SECRET,
-  },
+  seed: YOUR_WALLET_SECRET,
 });
 
 // Example of how to submit the files

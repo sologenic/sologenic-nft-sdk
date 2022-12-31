@@ -1,20 +1,23 @@
-type NFTCategoryType = "art" | "motion" | "music" | "metaverse" | "sports" | "others" | "tradingcards" | "collectibles"
+export type NFTCategoryType =
+  | "art"
+  | "motion"
+  | "music"
+  | "metaverse"
+  | "sports"
+  | "others"
+  | "tradingcards"
+  | "collectibles";
 
-interface WalletInterface {
-  address: string;
-  seed: string;
-}
-
-interface SignTransactionOptions {
+export interface SignTransactionOptions {
   autofill?: boolean;
   withClient?: boolean;
 }
-interface NFTokenMintResult {
+export interface NFTokenMintResult {
   mint_tx_hash: string;
   NFTokenID: string;
 }
 
-interface CollectionData {
+export interface CollectionData {
   name: string;
   cover?: Buffer;
   thumbnail?: Buffer;
@@ -22,7 +25,7 @@ interface CollectionData {
   transfer_fee?: number;
 }
 
-interface BurnConfiguration {
+export interface BurnConfiguration {
   burn_amount: string | number;
   burn_amount_issuance?: string | number;
   burn_amount_market_index?: string | number;
@@ -30,7 +33,7 @@ interface BurnConfiguration {
   burn_issuer: string;
 }
 
-interface BurnResult {
+export interface BurnResult {
   address: string;
   hash: string;
   type?: string;
@@ -38,18 +41,18 @@ interface BurnResult {
   validated?: boolean;
 }
 
-interface NFTSlot {
+export interface NFTSlot {
   uid: string;
   [key: string]: unknown;
 }
 
-interface NFTAttribute {
+export interface NFTAttribute {
   trait_type: string;
   value: string | number;
   max_value?: string | number;
 }
 
-interface NFTPayload {
+export interface NFTPayload {
   file: Buffer;
   thumbnail: Buffer;
   name: string;
@@ -62,13 +65,13 @@ interface NFTPayload {
   attributes?: NFTAttribute[];
 }
 
-interface SologenicMinterProps {
-  wallet: WalletInterface;
+export interface SologenicMinterProps {
+  seed: string;
   apiUrl: string;
   xrpl_node: string;
 }
 
-interface Collection {
+export interface Collection {
   uid: string;
   issuer: string;
   nfts: NFTSlot[];

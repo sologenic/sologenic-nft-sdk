@@ -1,6 +1,6 @@
 {
   "name": "sologenic-nft-minter",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Typescript library to mint NFTs on the Sologenic NFT Marketplace",
   "main": "build/index.js",
   "scripts": {
@@ -9,7 +9,8 @@
     "dev": "concurrently \"npx tsc --watch\" \"nodemon dotenv --trace-warnings build/index.js\"",
     "build": "rm -rf build/ && npx tsc",
     "copy-files": "copyfiles -u 1 public/**/* build/public",
-    "publish-package": "rm -rf build/ && standard-version && npx tsc && npm publish --access public"
+    "publish-package": "rm -rf build/ && standard-version && npx tsc && npm publish --access public",
+    "watch": "concurrently \"npx tsc --watch\" \"npm run build\""
   },
   "repository": {
     "type": "git",
