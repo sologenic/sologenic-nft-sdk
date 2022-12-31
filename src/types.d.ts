@@ -1,3 +1,5 @@
+type NFTCategoryType = "art" | "motion" | "music" | "metaverse" | "sports" | "others" | "tradingcards" | "collectibles"
+
 interface WalletInterface {
   address: string;
   seed: string;
@@ -51,7 +53,7 @@ interface NFTPayload {
   file: Buffer;
   thumbnail: Buffer;
   name: string;
-  category: string;
+  category: NFTCategoryType;
   is_explicit: boolean;
   only_xrp: boolean;
   transfer_fee?: number; // A number between 0 and 50000 i.e to get 10% royalty transfer_fee must be 10000
