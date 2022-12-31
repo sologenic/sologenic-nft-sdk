@@ -1,6 +1,6 @@
 {
-  "name": "sologeni-minter",
-  "version": "1.0.8",
+  "name": "sologenic-minter",
+  "version": "1.0.1",
   "description": "Typescript library to mint NFTs on the Sologenic NFT Marketplace",
   "main": "build/index.js",
   "scripts": {
