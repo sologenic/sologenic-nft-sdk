@@ -8,7 +8,7 @@ import {
 } from "xrpl";
 import moment from "moment";
 import axios from "axios";
-import { categories, encodeNFTTokenID, getBase64, toHex } from "../utils";
+import { encodeNFTTokenID, getBase64, toHex } from "../utils";
 
 export class SologenicMinter {
   private _xrplClient: Client;
@@ -207,12 +207,6 @@ export class SologenicMinter {
 
   async mint(nftData: NFTPayload): Promise<NFTokenMintResult> {
     try {
-      if (!categories.includes(nftData.category))
-        throw new Error(
-          nftData.category +
-            " Category not supported. Categories supported " +
-            JSON.stringify(categories)
-        );
 
       console.info("Starting minting process...");
       // If collection address has not been set, throw error
