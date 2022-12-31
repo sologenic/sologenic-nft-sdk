@@ -9,17 +9,6 @@ import {
 import moment from "moment";
 import axios from "axios";
 import { categories, encodeNFTTokenID, getBase64, toHex } from "../utils";
-import {
-  SologenicMinterProps,
-  Collection,
-  NFTPayload,
-  NFTSlot,
-  SignTransactionOptions,
-  NFTokenMintResult,
-  CollectionData,
-  BurnConfiguration,
-  BurnResult,
-} from "../types";
 
 export class SologenicMinter {
   private _xrplClient: Client;
