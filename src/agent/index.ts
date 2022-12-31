@@ -8,6 +8,8 @@ import {
   BurnResult,
   BurnConfiguration,
   SignTransactionOptions,
+  MintMultipleCopiesOptions,
+  MintMultipleCopiesResult,
 } from "../types";
 
 import {
@@ -17,7 +19,6 @@ import {
   AccountInfoResponse,
   TxResponse,
   Wallet,
-  decode,
 } from "xrpl";
 import moment from "moment";
 import axios, { AxiosResponse } from "axios";
@@ -69,7 +70,7 @@ export class SologenicMinter {
 
   async getAllCollections(): Promise<Collection[]> {
     try {
-      const collections: Promise<Collection[]> = axios({
+      const collections: Collection[] = await axios({
         method: "get",
         headers: this._authHeaders,
         baseURL: `${this._apiUrl}/collection/all`,
@@ -218,8 +219,6 @@ export class SologenicMinter {
       // Upload NFT Data
       const uploaded_nft_uid: string = await this._uploadNFTData(nftData);
 
-      console.log(uploaded_nft_uid);
-
       // Make sure collection is shipped
       await this._shipCollection();
 
@@ -242,6 +241,55 @@ export class SologenicMinter {
       this._collectionData = await this._getCollectionData();
 
       return nft_result;
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
+  async mintMultipleCopies(
+    nftData: NFTPayload,
+    options: MintMultipleCopiesOptions
+  ): Promise<MintMultipleCopiesResult> {
+    try {
+      console.info(`Starting mint of ${options.numberOfCopies} copies`);
+      let minted_nfts: NFTokenMintResult[] = [];
+      let error: any = null;
+
+      for (var i: any = 0; i < options.numberOfCopies; i++) {
+        try {
+          console.info("Minting copy #", i + 1);
+          const minted = await this.mint(nftData);
+          minted_nfts.push(minted);
+        } catch (e: any) {
+          console.error(e);
+          if (e.message === "No NFT Slots available") {
+            if (options?.autoBurn) {
+              await this.generateNFTSlots(1);
+              const minted = await this.mint(nftData);
+
+              minted_nfts.push(minted);
+            } else {
+              error = {
+                message: e.message,
+              };
+
+              break;
+            }
+          } else {
+            error = {
+              message: e.message,
+            };
+
+            break;
+          }
+        }
+      }
+
+      return {
+        copies_minted: minted_nfts.length,
+        nfts: minted_nfts,
+        error,
+      };
     } catch (e: any) {
       throw e;
     }
@@ -479,8 +527,6 @@ export class SologenicMinter {
 
   private async _shipCollection(): Promise<boolean> {
     try {
-      console.info("Shipping Collection...");
-
       const shipped: AxiosResponse = await axios({
         baseURL: `${this._apiUrl}/collection/ship`,
         method: "post",
@@ -504,7 +550,7 @@ export class SologenicMinter {
     try {
       console.info("Getting Collection Data...");
 
-      const collection: Collection = await axios({
+      const collection = await axios({
         url: `${this._apiUrl}/collection/assemble`,
         method: "post",
         headers: this._authHeaders,

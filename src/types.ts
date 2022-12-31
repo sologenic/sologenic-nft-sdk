@@ -12,6 +12,18 @@ export interface SignTransactionOptions {
   autofill?: boolean;
   withClient?: boolean;
 }
+
+export interface MintMultipleCopiesOptions {
+  numberOfCopies: number;
+  autoBurn?: boolean;
+}
+
+export interface MintMultipleCopiesResult {
+  copies_minted: number;
+  nfts: NFTokenMintResult[];
+  error?: any;
+}
+
 export interface NFTokenMintResult {
   mint_tx_hash: string;
   NFTokenID: string;

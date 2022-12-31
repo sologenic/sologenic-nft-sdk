@@ -11,7 +11,6 @@ npm i sologenic-nft-minter
 ## Contents
 
 - [Usage](#usage)
-- [Sologenic Categories](#sologenic-categories)
 - [Methods](#methods)
   - [getApiURL](#getApiURL)
   - [getWalletAddress](#getWalletAddress)
@@ -24,6 +23,7 @@ npm i sologenic-nft-minter
   - [getCollectionData](#getCollectionData)
   - [getCollectionNFTSlots](#getCollectionNFTSlots)
   - [mint](#mint)
+  - [mintMultipleCopies](#mintmultiplecopies)
 
 ## Usage
 
@@ -80,15 +80,6 @@ const { mint_tx_hash, NFTokenID } = await minter.mint({
     },
   ],
 });
-```
-
-## Sologenic Categories
-
-```js
-import { categories } from "sologenic-nft-minter";
-
-const { art, motion, trading_cards, collectibles, sports, music, others } =
-  categories;
 ```
 
 ## Methods
@@ -367,3 +358,70 @@ This method returns an object, these are the properties of the object
 | :----------- | ---------------------------------------------------------------: |
 | mint_tx_hash | B1561A148081359BECA7D4F309820B88DB9940A58458D5D363B8BED02EDB9D3A |
 | NFTokenID    | 000827107022610A05BAA45AE04D5B022D1FF298795EF9ABE4FAB9DF0000000A |
+
+### mintMultipleCopies
+
+```js
+import fs from "fs";
+
+const nftFileBuffer = fs.readFileSync("PATH_TO_NFT_FILE");
+const nftThumbnailBuffer = fs.readFileSync("PATH_TO_NFT_THUMBNAIL_FILE");
+
+const nft = {
+  file: nftFileBuffer,
+  thumbnail: nftThumbnailBuffer,
+  name: "Testing NFT 3",
+  category: "art",
+  only_xrp: false,
+  is_explicit: false,
+  transfer_fee: 10000,
+  description: "Testing NFT description",
+  external_url: "https://sologenic.org",
+  attributes: [
+    {
+      trait_type: "attribute",
+      value: "attr",
+    },
+    {
+      trait_type: "attribute 2",
+      value: 1,
+      max_value: 2,
+    },
+  ],
+};
+
+const options = {
+  numberOfCopies: 5,
+  autoBurn: true,
+};
+
+const copies_result = await minter.mintMultipleCopies(nft, options);
+```
+
+_Params_
+
+This method takes two parameters.
+
+| Param   | Type                                    | Required |
+| :------ | :-------------------------------------- | :------: |
+| nft     | [See `mint()` method for params](#mint) |  `true`  |
+| options | MintMultipleCopiesOptions               |  `true`  |
+
+_Options_
+
+These are the properties of the Options object.
+
+| Param          | Type    | Required | Description                                                              |
+| :------------- | :------ | :------: | :----------------------------------------------------------------------- |
+| numberOfCopies | number  |  `true`  | Amount of copies of the same NFT to mint                                 |
+| autoBurn       | boolean | `false`  | If the minter should attempt to burn SOLO for more NFT Slots if required |
+
+_Response_
+
+This method returns an object with the next properties
+
+| Property      |          Example | Description                                                                               |
+| :------------ | ---------------: | :---------------------------------------------------------------------------------------- |
+| copies_minted |                5 | Amount of copies successfully minted                                                      |
+| nfts          |      NFTResult[] | Array of the successfully minted NFTs. [See `mint()` response for properties of each NFT] |
+| error         | `Object or null` | If null, means the method ran successfully and all nfts were minted.                      |
