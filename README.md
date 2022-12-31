@@ -1,11 +1,11 @@
-# Sologenic Minter
+# Sologenic NFT Minter
 
 This library was created to automate up to an extent the minting of NFTs.
 
 DUE TO THE REQUIREMENTS OF USING THE WALLET SECRET, IT IS NOT RECOMMENDED TO USE THIS LIBRARY CLIENT SIDE.
 
 ```
-npm i sologenic-minter
+npm i sologenic-nft-minter
 ```
 
 ## Contents
@@ -28,7 +28,7 @@ npm i sologenic-minter
 ## Usage
 
 ```js
-import SologenicMinter from "sologenic-minter";
+import { SologenicMinter } from "sologenic-nft-minter";
 import fs from "fs";
 
 const minter = new SologenicMinter({
@@ -88,7 +88,10 @@ const { mint_tx_hash, NFTokenID } = await minter.mint({
 ## Sologenic Categories
 
 ```js
-import { categories } from "sologenic-minter";
+import { categories } from "sologenic-nft-minter";
+
+const { art, motion, trading_cards, collectibles, sports, music, others } =
+  categories;
 ```
 
 ## Methods

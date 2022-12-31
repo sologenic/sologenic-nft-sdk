@@ -1,5 +1,5 @@
-import SologenicMinter from "./agent/index.js";
-
+export * from "./agent";
+export * from "./types";
 export const categories = {
   art: "art",
   motion: "motion",
@@ -10,5 +10,3 @@ export const categories = {
   trading_cards: "tradingcards",
   collectibles: "collectibles",
 };
-
-export default SologenicMinter;

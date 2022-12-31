@@ -1,19 +1,14 @@
-import xrpl, {
+import {
   Transaction,
   Client,
   xrpToDrops,
   AccountInfoResponse,
   TxResponse,
+  Wallet,
 } from "xrpl";
 import moment from "moment";
 import axios from "axios";
-import {
-  categories,
-  // categoriesObject,
-  encodeNFTTokenID,
-  getBase64,
-  toHex,
-} from "./utils/index.js";
+import { categories, encodeNFTTokenID, getBase64, toHex } from "../utils";
 import {
   SologenicMinterProps,
   Collection,
@@ -24,15 +19,14 @@ import {
   CollectionData,
   BurnConfiguration,
   BurnResult,
-} from "./types/index.js";
+} from "../types";
 
-export default class SologenicMinter {
+export class SologenicMinter {
   private _xrplClient: Client;
   private _collectionAddress: string | undefined;
   private _collectionData: Collection | undefined;
   private _apiUrl: string;
-  private _wallet: xrpl.Wallet;
-  // readonly categories: any = categoriesObject;
+  private _wallet: Wallet;
 
   constructor(props: SologenicMinterProps) {
     if (!props.wallet) throw new Error("Wallet missing on constructor props.");
@@ -41,7 +35,7 @@ export default class SologenicMinter {
       throw new Error("XRPL Node missing on constructor props.");
 
     this._xrplClient = new Client(props.xrpl_node);
-    this._wallet = xrpl.Wallet.fromSecret(props.wallet.seed);
+    this._wallet = Wallet.fromSecret(props.wallet.seed);
     this._apiUrl = props.apiUrl;
 
     console.info("Sologenic Minter Initialized");

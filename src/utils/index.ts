@@ -1,5 +1,4 @@
 import { decodeAccountID } from "xrpl";
-import { fileTypeFromBuffer } from "file-type";
 
 export const categories = [
   "art",
@@ -61,7 +60,9 @@ export const encodeNFTTokenID = (
 };
 
 export async function getBase64(file: Buffer): Promise<any> {
-  const fileType: any = await fileTypeFromBuffer(file);
+  const fileReader = await import("file-type");
+
+  const fileType: any = await fileReader.fileTypeFromBuffer(file);
 
   const dataPrefix = `data:${fileType.mime};base64,`;
 
