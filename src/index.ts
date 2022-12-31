@@ -1,5 +1,4 @@
 export * from "./agent";
-export * from "./types";
 export const categories = {
   art: "art",
   motion: "motion",
