@@ -432,7 +432,9 @@ const { NFTokenID, mint_tx_hash } = await minter.mint(nft);
 
 _Params_
 
-This method takes an Object with all the data of the NFT. These are the properties.
+This method takes two parameters an Object with all the data of the NFT and an Object with options.
+
+#### NFT DATA
 
 | Property     | Type           | Required |
 | :----------- | :------------- | :------: |
@@ -454,6 +456,13 @@ interface NFTAttribute {
   max_value?: number;
 }
 ```
+
+#### OPTIONS
+
+| Property | Type    | Required | Description                                                                                                                                                                                                                                    |
+| :------- | :------ | :------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| autoBurn | boolean | `false`  | If the minter should attempt to burn SOLO for more NFT Slots if required                                                                                                                                                                       |
+| onBehalf | string  | `false`  | If this NFT is being minted on behalf of another account. The other account should have the initating address as Minter on their AccountRoot object. See [NFTokenMint](https://xrpl.org/nftokenmint.html#issuing-on-behalf-of-another-account) |
 
 _Response_
 
@@ -512,14 +521,15 @@ This method takes two parameters.
 | nft     | [See `mint()` method for params](#mint) |  `true`  |
 | options | MintMultipleCopiesOptions               |  `true`  |
 
-_Options_
+#### OPTIONS
 
 These are the properties of the Options object.
 
-| Param          | Type    | Required | Description                                                              |
-| :------------- | :------ | :------: | :----------------------------------------------------------------------- |
-| numberOfCopies | number  |  `true`  | Amount of copies of the same NFT to mint                                 |
-| autoBurn       | boolean | `false`  | If the minter should attempt to burn SOLO for more NFT Slots if required |
+| Param          | Type    | Required | Description                                                                                                                                                                                                                                    |
+| :------------- | :------ | :------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| numberOfCopies | number  |  `true`  | Amount of copies of the same NFT to mint                                                                                                                                                                                                       |
+| autoBurn       | boolean | `false`  | If the minter should attempt to burn SOLO for more NFT Slots if required                                                                                                                                                                       |
+| onBehalf       | string  | `false`  | If this NFT is being minted on behalf of another account. The other account should have the initating address as Minter on their AccountRoot object. See [NFTokenMint](https://xrpl.org/nftokenmint.html#issuing-on-behalf-of-another-account) |
 
 _Response_
 

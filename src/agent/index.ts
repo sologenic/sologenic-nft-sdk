@@ -11,6 +11,7 @@ import {
   MintMultipleCopiesOptions,
   MintMultipleCopiesResult,
   MinterMode,
+  MintOptions,
   NFT,
   NFTData,
 } from "../types";
@@ -22,6 +23,7 @@ import {
   AccountInfoResponse,
   TxResponse,
   Wallet,
+  NFTokenMint,
 } from "xrpl";
 import moment from "moment";
 import axios, { AxiosResponse } from "axios";
@@ -308,7 +310,10 @@ export class SologenicNFTManager {
     this._collectionData = await this._getCollectionData();
   }
 
-  async mint(nftData: NFTPayload): Promise<NFTokenMintResult> {
+  async mint(
+    nftData: NFTPayload,
+    options?: MintOptions
+  ): Promise<NFTokenMintResult> {
     try {
       this._checkWalletConnection();
 
@@ -323,8 +328,9 @@ export class SologenicNFTManager {
       await this._shipCollection();
 
       // Request NFTokenMint Transaction
-      const mintTx: Transaction = await this._prepareMintTransaction(
-        uploaded_nft_uid
+      const mintTx: NFTokenMint = await this._prepareMintTransaction(
+        uploaded_nft_uid,
+        options?.onBehalf
       );
 
       // Sign NFTokenMint Transaction
@@ -342,6 +348,17 @@ export class SologenicNFTManager {
 
       return nft_result;
     } catch (e: any) {
+      if (e.error === errors.nft_slots_not_available.error) {
+        if (options?.autoBurn) {
+          await this.generateNFTSlots(1);
+          const minted = await this.mint(nftData, options);
+
+          return minted;
+        }
+
+        throw e;
+      }
+
       throw e;
     }
   }
@@ -360,13 +377,18 @@ export class SologenicNFTManager {
       for (var i: any = 0; i < options.numberOfCopies; i++) {
         try {
           console.info("Minting copy #", i + 1);
-          const minted = await this.mint(nftData);
+
+          const minted = await this.mint(nftData, {
+            onBehalf: options.onBehalf,
+          });
           minted_nfts.push(minted);
         } catch (e: any) {
           if (e.error === errors.nft_slots_not_available.error) {
             if (options?.autoBurn) {
               await this.generateNFTSlots(1);
-              const minted = await this.mint(nftData);
+              const minted = await this.mint(nftData, {
+                onBehalf: options.onBehalf,
+              });
 
               minted_nfts.push(minted);
             } else {
@@ -538,7 +560,9 @@ export class SologenicNFTManager {
           const nftsequence = tx.result.meta.AffectedNodes.find((an: any) => {
             if (
               an.ModifiedNode &&
-              an.ModifiedNode.LedgerEntryType === "AccountRoot"
+              an.ModifiedNode.LedgerEntryType === "AccountRoot" &&
+              an.ModifiedNode.FinalFields.Account ===
+                (tx.result.Issuer ? tx.result.Issuer : tx.result.Account)
             ) {
               return an;
             }
@@ -547,7 +571,7 @@ export class SologenicNFTManager {
           const nftTokenID = encodeNFTTokenID(
             tx.result.Flags,
             tx.result.TransferFee,
-            tx.result.Account,
+            tx.result.Issuer ? tx.result.Issuer : tx.result.Account,
             tx.result.NFTokenTaxon,
             nftsequence.ModifiedNode.PreviousFields.MintedNFTokens
           );
@@ -606,15 +630,19 @@ export class SologenicNFTManager {
     }
   }
 
-  private async _prepareMintTransaction(nftUID: string): Promise<Transaction> {
+  private async _prepareMintTransaction(
+    nftUID: string,
+    onBehalf?: string
+  ): Promise<NFTokenMint> {
     try {
       console.info("Preparing NFTokenMint Transaction...");
-      const mint_transaction: Transaction = await axios({
+      const mint_transaction: NFTokenMint = await axios({
         baseURL: `${this._baseURL}/${services.mint}/nft/prepareMint`,
         method: "post",
         headers: this._authHeaders,
         data: {
           uid: nftUID,
+          ...(onBehalf ? { on_behalf: onBehalf } : {}),
         },
       })
         .then((r) => r.data.response.tx)

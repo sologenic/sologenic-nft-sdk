@@ -53,6 +53,12 @@ export interface SignTransactionOptions {
 export interface MintMultipleCopiesOptions {
   numberOfCopies: number;
   autoBurn?: boolean;
+  onBehalf?: string;
+}
+
+export interface MintOptions {
+  autoBurn?: boolean;
+  onBehalf?: string;
 }
 
 export interface MintMultipleCopiesResult {
