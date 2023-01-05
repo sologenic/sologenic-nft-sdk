@@ -125,6 +125,12 @@ export interface SologenicNFTManagerProps {
 
 export interface SologenicNFTTraderProps {
   mode: Mode;
+  xrpl_node: string;
+}
+
+export interface SologenicBaseProps {
+  mode: Mode;
+  xrpl_node: string;
 }
 
 export interface Collection {
