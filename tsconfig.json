@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "rootDir": "src",
+    "rootDir": "./",
     "outDir": "./build",
     "esModuleInterop": true,
     "strict": true,
     "declaration": true,
     "module": "commonjs",
-    "moduleResolution": "node16"
+    "moduleResolution": "node16",
+    "resolveJsonModule": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules/**"]

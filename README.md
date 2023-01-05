@@ -1,11 +1,13 @@
-# Sologenic NFT Minter
+# Sologenic NFT SDK
 
-This library was created to automate up to an extent the minting of NFTs.
+This library is to (bulk) mint NFTs on the Sologenic NFT marketplace (sologenic.org/nfts/marketplace).
 
-DUE TO THE REQUIREMENTS OF USING THE WALLET SECRET, IT IS NOT RECOMMENDED TO USE THIS LIBRARY CLIENT SIDE.
+After the minting process is completed, the NFTs will take a few minutes show up in the marketplace.
+
+DUE TO THE REQUIREMENTS OF USING THE WALLET SECRET, DO NOT USE THIS LIBRARY AT THE CLIENT SIDE !!!!!!!!!!
 
 ```
-npm i sologenic-nft-minter
+npm i sologenic-nft-manager
 ```
 
 ## Contents
@@ -13,6 +15,9 @@ npm i sologenic-nft-minter
 - [Usage](#usage)
 - [Methods](#methods)
   - [getApiURL](#getApiURL)
+  - [setAccount](#setAccount)
+  - [getAccountNFTS](#getAccountNfts)
+  - [getNFTData](#getNFTData)
   - [getWalletAddress](#getWalletAddress)
   - [getBurnConfiguration](#getBurnConfiguration)
   - [generateNFTSlots](#generateNFTSlots)
@@ -28,13 +33,12 @@ npm i sologenic-nft-minter
 ## Usage
 
 ```js
-import { SologenicMinter } from "sologenic-nft-minter";
+import { SologenicNFTManager } from "sologenic-nft-manager";
 import fs from "fs";
 
-const minter = new SologenicMinter({
-  apiUrl: SOLOGENIC_API_URL,
+const minter = new SologenicNFTManager({
+  mode: "mainnet" | "testnet" | "devnet",
   xrpl_node: XRPL_NODE,
-  seed: YOUR_WALLET_SECRET,
 });
 
 // Example of how to submit the files
@@ -42,6 +46,9 @@ const collectionCoverBuffer = fs.readFileSync("PATH_TO_COLLECTION_COVER_FILE");
 const collectionThumbnailBuffer = fs.readFileSync("PATH_TO_COLLECTION_THUMBNAIL_FILE");
 const nftFileBuffer = fs.readFileSync("PATH_TO_NFT_FILE");
 const nftThumbnailBuffer = fs.readFileSync("PATH_TO_NFT_THUMBNAIL_FILE");
+
+// Set the account to mint with
+const connected_account = minter.setAccount(YOUR_WALLET_SECRET);
 
 // After initializing the Minter, we need to set the collection address in which we want to mint
 // Use setCollectionAddress() if you know the collection you want to mint in
@@ -86,11 +93,100 @@ const { mint_tx_hash, NFTokenID } = await minter.mint({
 
 ### `getApiURL`
 
-Returns the current Sologenic API URL
+Returns information about the Sologenic API mode connection
 
 ```js
 const url = minter.getApiURL();
 ```
+
+_Response_
+
+This method returns an object with the following properties:
+
+| Property |                        Value |
+| :------- | ---------------------------: |
+| mode     | mainnet or testnet or devnet |
+| url      |            Sologenic Api URL |
+
+### `setAccount`
+
+This method sets the default account to use.
+
+```js
+const wallet_address = minter.setAccount(YOUR_WALLET_SECRET);
+// rBDu1BC6f1SKRvRxPiHZdeML5CRwByQTFG
+```
+
+### `getAccountNFTS`
+
+This method returns ALL the NFTs owned by this account in reference to the ledger; to get the NFT metadata (name, description, etc) you will need to call the method [getNFTData](#getNFTData).
+
+```js
+const nfts = await minter.getAccountNFTS();
+```
+
+_Params_
+
+This method takes one OPTIONAL parameter; an account address. If they account address is not passed, it will default to the connected account. If there is no parameter passed nor account connected (See [setAccount](#setAccount)), this method will throw an exception.
+
+| Param   |   Type |
+| :------ | -----: |
+| address | string |
+
+_Response_
+This method returns an array of the NFTs owned by the passed account (or default account) on reference with the XRP Ledger. These are the properties on each NFT object
+
+| Property       | Description                                                                                                                                                                                                                                                                                                   |                                                                                                                                                                                      Example |
+| :------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
+| TransferFee    | The royalty set for this NFT. 10000 = 10%                                                                                                                                                                                                                                                                     |                                                                                                                                                                                        10000 |
+| Flags          | Flags are properties or other options associated with the NFT object.                                                                                                                                                                                                                                         |                                                                                                                                                                                            8 |
+| NFTokenTaxon   | The taxon associated with the token.                                                                                                                                                                                                                                                                          |                                                                                                                                                                                        34356 |
+| NFTokenID      | Unique identifier of the NFT on the XRPL Ledger                                                                                                                                                                                                                                                               |                                                                                                                             000A2134C4E16036D649C037D2DE7C58780DE1D985EEB986483AE3C9000001AC |
+| nft_serial     | Serial number of the NFT                                                                                                                                                                                                                                                                                      |                                                                                                                                                                                            8 |
+| Issuer         | Minter of the NFT.                                                                                                                                                                                                                                                                                            |                                                                                                                                                           rBDu1BC6f1SKRvRxPiHZdeML5CRwByQTFG |
+| URI (Optional) | Up to 256 bytes of arbitrary data. You can use the xrpl.convertHexToString utility to convert the HEX string to its string equivalent. The contents could decode to an HTTP or HTTPS URL, an IPFS URI, a magnet link, immediate data encoded as an RFC 2379 "data" URL , or even an issuer-specific encoding. | 68747470733A2F2F697066732E696F2F697066732F62616679626569666F76696766743578636B6A696C6C6A666E636F756F74716A626E7669697070326F636A35323471347675747161736D6B7378612F6D657461646174612E6A736F6E |
+
+### `getNFTData`
+
+This method returns the data of an specific NFT using its NFTokenID.
+Note: If the NFT exists on the XRP Ledger but this method returns a NFT_NOT_FOUND, maybe the NFT was not minted on the Sologenic NFT Marketplace.
+
+```js
+const nft_data = await minter.getNFTData(NFTokenID);
+```
+
+_Params_
+
+This method takes one parameter.
+
+| Property  |   Type | Description                                                      |
+| :-------- | -----: | :--------------------------------------------------------------- |
+| NFTokenID | string | 000A2134C4E16036D649C037D2DE7C58780DE1D985EEB986483AE3C9000001AC |
+
+_Response_
+
+This method returns an object with the following properties:
+
+| Property               |                                                          Description | Example                                                                               |
+| :--------------------- | -------------------------------------------------------------------: | :------------------------------------------------------------------------------------ |
+| id                     |                                                            NFTokenID | 000827107022610A05BAA45AE04D5B022D1FF298795EF9AB000083F100000000                      |
+| standard               |                                               NFT Standard minted on | XLS-20d                                                                               |
+| collection_id          |                                                   Collection address | rDZj8PN21gmtWwqFY1SAqyubRHeT87NSVC                                                    |
+| minter                 |                                                       Minter address | rBDu1BC6f1SKRvRxPiHZdeML5CRwByQTFG                                                    |
+| owner                  |                                                Current owner address | rBDu1BC6f1SKRvRxPiHZdeML5CRwByQTFG                                                    |
+| ipfs_cid               |                                               CID of the NFT on IPFS | bafybeihly7rjgfypze7hcruuss3vgzl7wh2e7zcplsbsj75ecrnuwjlydi                           |
+| md5_hash               |                                  MD5 hash of the contents of the NFT | cfe2892441f41d6ea15f1e4e71614f3f                                                      |
+| minted_txid            | Transaction Hash of the NFTokenMint Transaction that minted this NFT | 590B998100CCA720D0BA77BC73EF69E6358A53AE9A86A8E706DAC8498DBA0738                      |
+| metadata.animation_url |                                        IPFS Url of the NFT Animation | ipfs://ipfs/bafybeiacwbv46qb7mnnjppxpshenoo5dc65uvucz3nggfimriz2hoqtsiq/animation.png |
+| metadata.attributes    |                               Array of attributes pertaining the NFT | See [mint()](#mint) for details of this property                                      |
+| metadata.category      |                                                  Category of the NFT | art                                                                                   |
+| metadata.content_type  |                                                 Mime type of the NFT | image/png                                                                             |
+| metadata.description   |                                               Description of the NFT | Testing NFT Description                                                               |
+| metadata.external_url  |                                       External URL minted on the NFT | https://sologenic.org                                                                 |
+| metadata.image_url     |                                            IPFS URL of the NFT Image | ipfs://ipfs/bafybeiacwbv46qb7mnnjppxpshenoo5dc65uvucz3nggfimriz2hoqtsiq/image.png     |
+| metadata.is_explicit   |               Whether the NFT includes explicit or sensitive content | `false`                                                                               |
+| metadata.md5hash       |                                  MD5 hash of the contents of the NFT | cfe2892441f41d6ea15f1e4e71614f3f                                                      |
+| metadata.name          |                                                      Name of the NFT | Testing NFT                                                                           |
 
 ### `getWalletAddress`
 
@@ -338,17 +434,26 @@ _Params_
 
 This method takes an Object with all the data of the NFT. These are the properties.
 
-| Property     | Type    | Required |
-| :----------- | :------ | :------: |
-| file         | Buffer  |  `true`  |
-| thumbnail    | Buffer  |  `true`  |
-| name         | string  |  `true`  |
-| category     | string  |  `true`  |
-| only_xrp     | boolean |  `true`  |
-| is_explicit  | boolean |  `true`  |
-| transfer_fee | int     | `false`  |
-| description  | string  | `false`  |
-| external_url | URL     | `false`  |
+| Property     | Type           | Required |
+| :----------- | :------------- | :------: |
+| file         | Buffer         |  `true`  |
+| thumbnail    | Buffer         |  `true`  |
+| name         | string         |  `true`  |
+| category     | string         |  `true`  |
+| only_xrp     | boolean        |  `true`  |
+| is_explicit  | boolean        |  `true`  |
+| transfer_fee | int            | `false`  |
+| description  | string         | `false`  |
+| external_url | URL            | `false`  |
+| attributes   | NFTAttribute[] | `false`  |
+
+```js
+interface NFTAttribute {
+  trait_type: string;
+  value: string | number;
+  max_value?: number;
+}
+```
 
 _Response_
 
@@ -359,7 +464,7 @@ This method returns an object, these are the properties of the object
 | mint_tx_hash | B1561A148081359BECA7D4F309820B88DB9940A58458D5D363B8BED02EDB9D3A |
 | NFTokenID    | 000827107022610A05BAA45AE04D5B022D1FF298795EF9ABE4FAB9DF0000000A |
 
-### mintMultipleCopies
+### `mintMultipleCopies`
 
 ```js
 import fs from "fs";

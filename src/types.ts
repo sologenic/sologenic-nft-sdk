@@ -1,3 +1,5 @@
+import { AxiosRequestHeaders } from "axios";
+
 export type NFTCategoryType =
   | "art"
   | "motion"
@@ -7,6 +9,19 @@ export type NFTCategoryType =
   | "others"
   | "tradingcards"
   | "collectibles";
+
+export type MinterMode = "devnet" | "mainnet" | "testnet";
+
+export interface NFT {
+  Flags: number;
+  Issuer: string;
+  NFTokenID: string;
+  NFTokenTaxon: number;
+  URI?: string;
+  nft_serial: number;
+}
+
+export interface NFTData {}
 
 export interface SignTransactionOptions {
   autofill?: boolean;
@@ -78,8 +93,7 @@ export interface NFTPayload {
 }
 
 export interface SologenicMinterProps {
-  seed: string;
-  apiUrl: string;
+  mode: MinterMode;
   xrpl_node: string;
 }
 

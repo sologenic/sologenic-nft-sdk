@@ -1,4 +1,5 @@
-import { decodeAccountID } from "xrpl";
+import { Client, decodeAccountID } from "xrpl";
+import { NFT } from "../types";
 
 export const categories = [
   "art",
@@ -10,6 +11,17 @@ export const categories = [
   "tradingcards",
   "collectibles",
 ];
+
+export const modes = {
+  mainnet: "https://api.sologenic.org/api/v1",
+  devnet: "https://api-devnet.test.sologenic.org/api/v1",
+  testnet: "https://api-testnet.test.sologenic.org/api/v1",
+};
+
+export const services = {
+  mint: "nft-minter",
+  nfts: "nft-marketplace",
+};
 
 // Helper function to convert to Hex
 export const toHex = (string: string): string => {
@@ -67,4 +79,44 @@ export async function getBase64(file: Buffer): Promise<any> {
   const dataPrefix = `data:${fileType.mime};base64,`;
 
   return dataPrefix + file.toString("base64");
+}
+
+export async function getAllAccountNFTS(
+  client: Client,
+  address: string,
+  marker?: string
+): Promise<NFT[]> {
+  try {
+    var nfts: NFT[] = [];
+
+    await client
+      .request({
+        command: "account_nfts",
+        account: address,
+        limit: 100,
+        ...(marker ? { marker } : {}),
+      })
+      .then(async (r) => {
+        nfts = [...r.result.account_nfts];
+
+        if (r.result.marker) {
+          nfts = [
+            ...nfts,
+            ...(await getAllAccountNFTS(
+              client,
+              address,
+              r.result.marker as string
+            )),
+          ];
+        }
+      })
+      .catch((e) => {
+        throw e;
+      });
+
+    return nfts;
+  } catch (e: any) {
+    console.log("E_GET_ACCOUNT_NFTS_UTILS =>", e);
+    throw e;
+  }
 }

@@ -1,8 +1,8 @@
 {
-  "name": "sologenic-nft-minter",
-  "version": "1.0.6",
-  "description": "Typescript library to mint NFTs on the Sologenic NFT Marketplace",
-  "main": "build/index.js",
+  "name": "sologenic-nft-manager",
+  "version": "1.0.7",
+  "description": "Typescript library to mint and manage NFTs on the Sologenic NFT Marketplace",
+  "main": "build/src/index.js",
   "scripts": {
     "test": "node build/test/test_mint.js",
     "start": "node build/index.js",
@@ -14,15 +14,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AlOaks/minter-agent.git"
+    "url": "git+https://github.com/sologenic/sologenic-nft-sdk.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/AlOaks/minter-agent/issues"
+    "url": "https://github.com/sologenic/sologenic-nft-sdk/issues"
   },
-  "homepage": "https://github.com/AlOaks/minter-agent#readme",
+  "homepage": "https://github.com/sologenic/sologenic-nft-sdk#readme",
   "dependencies": {
     "@types/node": "^18.11.18",
     "axios": "^1.2.2",
