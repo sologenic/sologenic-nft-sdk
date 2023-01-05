@@ -21,7 +21,29 @@ export interface NFT {
   nft_serial: number;
 }
 
-export interface NFTData {}
+export interface NFTMetadata {
+  animation_url?: string;
+  category: NFTCategoryType;
+  content_type: string;
+  description: string;
+  external_url: string;
+  image_url: string;
+  is_explicit: boolean;
+  md5hash: string;
+  name: string;
+}
+
+export interface NFTData {
+  id: string;
+  standard: string;
+  collection_id: string;
+  minter: string;
+  owner: string;
+  ipfs_cid: string;
+  md5_hash: string;
+  minted_txid: string;
+  metadata: NFTMetadata;
+}
 
 export interface SignTransactionOptions {
   autofill?: boolean;
