@@ -7,7 +7,7 @@ After the minting process is completed, the NFTs will take a few minutes show up
 DUE TO THE REQUIREMENTS OF USING THE WALLET SECRET, DO NOT USE THIS LIBRARY AT THE CLIENT SIDE !!!!!!!!!!
 
 ```
-npm i sologenic-nft-manager
+npm i sologenic-nft-sdk
 ```
 
 ## Contents
@@ -33,7 +33,7 @@ npm i sologenic-nft-manager
 ## Usage
 
 ```js
-import { SologenicNFTManager } from "sologenic-nft-manager";
+import { SologenicNFTManager } from "sologenic-nft-sdk";
 import fs from "fs";
 
 const minter = new SologenicNFTManager({
