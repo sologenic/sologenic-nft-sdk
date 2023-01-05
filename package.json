@@ -1,6 +1,6 @@
 {
-  "name": "sologenic-nft-sdk-dev",
-  "version": "1.0.8",
+  "name": "sologenic-nft-sdk",
+  "version": "1.0.9",
   "description": "Typescript library to mint and manage NFTs on the Sologenic NFT Marketplace",
   "main": "build/src/index.js",
   "scripts": {
