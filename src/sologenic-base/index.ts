@@ -1,13 +1,24 @@
-import { SologenicBaseProps, Mode } from "../types";
-import { Client, Wallet, Transaction } from "xrpl";
+import {
+  SologenicBaseProps,
+  Mode,
+  NFT,
+  SignTransactionOptions,
+} from "../types";
+import {
+  Client,
+  Wallet,
+  Transaction,
+  AccountInfoResponse,
+  xrpToDrops,
+  TxResponse,
+} from "xrpl";
 import errors from "../utils/errors";
 import { version } from "../../package.json";
-import { modes, toHex } from "../utils/index";
+import { getAllAccountNFTS, modes, toHex } from "../utils/index";
 import moment from "moment";
 
 export class SologenicBaseModule {
-  private _moduleName: string = "";
-
+  protected _moduleName: string = "base";
   protected _moduleMode: Mode;
   protected _xrplClient: Client;
   protected _baseURL: string;
@@ -50,6 +61,27 @@ export class SologenicBaseModule {
     }
   }
 
+  setAccount(seed: string): Wallet {
+    this._wallet = Wallet.fromSecret(seed);
+    this._setAuthHeaders();
+    setInterval(this._setAuthHeaders.bind(this), 60000);
+
+    return this._wallet;
+  }
+
+  async getAccountNFTS(account?: string): Promise<NFT[]> {
+    try {
+      await this._checkConnection();
+
+      if (account) return await getAllAccountNFTS(this._xrplClient, account);
+
+      const wallet = this._checkWalletConnection();
+      return await getAllAccountNFTS(this._xrplClient, wallet.classicAddress);
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
   protected _checkWalletConnection(): Wallet {
     if (!this._wallet) throw errors.wallet_not_connected;
 
@@ -86,6 +118,62 @@ export class SologenicBaseModule {
 
       // Return tx_blob
       return tx_blob;
+    }
+  }
+
+  protected async _signTransaction(
+    tx: Transaction,
+    options?: SignTransactionOptions
+  ): Promise<string> {
+    try {
+      console.info("Signing TX => ", tx);
+
+      const wallet: Wallet = this._wallet as Wallet;
+      // Instantiate a Wallet to sign with
+      if (options?.autofill) {
+        await this._checkConnection();
+
+        const account_info: AccountInfoResponse =
+          await this._xrplClient.request({
+            command: "account_info",
+            account: wallet.classicAddress,
+            ledger_index: "current",
+          });
+
+        const current_ledger_sequence: number = account_info.result
+          .ledger_current_index as number;
+
+        const current_account_sequence: number =
+          account_info.result.account_data.Sequence;
+
+        tx.LastLedgerSequence = current_ledger_sequence + 15;
+        tx.Fee = xrpToDrops(0.001);
+        tx.Sequence = current_account_sequence;
+      }
+
+      // Sign the Transaction and get tx_blob
+      const { tx_blob } = wallet.sign(tx);
+
+      return tx_blob;
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
+  protected async _submitSignedTxToLedger(
+    tx_blob: string
+  ): Promise<TxResponse> {
+    try {
+      console.info("Submitting Transaction to the Ledger...");
+      await this._checkConnection();
+
+      const result: TxResponse = await this._xrplClient.submitAndWait(tx_blob, {
+        wallet: this._wallet as Wallet,
+      });
+
+      return result;
+    } catch (e: any) {
+      throw e;
     }
   }
 

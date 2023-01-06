@@ -1,4 +1,12 @@
-import { Client, decodeAccountID } from "xrpl";
+import { isNumber } from "lodash";
+import {
+  Client,
+  decodeAccountID,
+  isoTimeToRippleTime,
+  unixTimeToRippleTime,
+  xrpToDrops,
+} from "xrpl";
+import { Amount } from "xrpl/dist/npm/models/common/index";
 import { NFT } from "../types";
 
 export const categories = [
@@ -21,6 +29,13 @@ export const modes = {
 export const services = {
   mint: "nft-minter",
   nfts: "nft-marketplace",
+};
+
+// Convert to Ripple Time
+export const convertToRippleTime = (time: number | Date | string): number => {
+  if (isNumber(time)) return unixTimeToRippleTime(time);
+
+  return isoTimeToRippleTime(time);
 };
 
 // Helper function to convert to Hex

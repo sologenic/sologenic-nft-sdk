@@ -10,6 +10,18 @@ export type NFTCategoryType =
 
 export type Mode = "devnet" | "mainnet" | "testnet";
 
+export interface AcceptOfferOptions {
+  isBuy: boolean;
+}
+
+export interface NFTSaleOptions {
+  amount: number | string;
+  currency: string;
+  issuer?: string;
+  expiration?: number | Date | string;
+  destination?: string;
+}
+
 export interface NFT {
   Flags: number;
   Issuer: string;
@@ -18,6 +30,8 @@ export interface NFT {
   URI?: string;
   nft_serial: number;
 }
+
+export interface Bid {}
 
 export interface NFTMetadata {
   animation_url?: string;
@@ -118,15 +132,9 @@ export interface NFTPayload {
   attributes?: NFTAttribute[];
 }
 
-export interface SologenicNFTManagerProps {
-  mode: Mode;
-  xrpl_node: string;
-}
+export interface SologenicNFTManagerProps extends SologenicBaseProps {}
 
-export interface SologenicNFTTraderProps {
-  mode: Mode;
-  xrpl_node: string;
-}
+export interface SologenicNFTTraderProps extends SologenicBaseProps {}
 
 export interface SologenicBaseProps {
   mode: Mode;
