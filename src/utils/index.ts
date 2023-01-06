@@ -1,13 +1,16 @@
 import { isNumber } from "lodash";
+import { Amount, NFTOffer } from "xrpl/dist/npm/models/common/index";
+import { NFT } from "../types";
+import errors from "./errors";
+import BigNumber from "bignumber.js";
 import {
   Client,
   decodeAccountID,
+  dropsToXrp,
   isoTimeToRippleTime,
   unixTimeToRippleTime,
   xrpToDrops,
 } from "xrpl";
-import { Amount } from "xrpl/dist/npm/models/common/index";
-import { NFT } from "../types";
 
 export const categories = [
   "art",
@@ -30,6 +33,75 @@ export const services = {
   mint: "nft-minter",
   nfts: "nft-marketplace",
 };
+
+export const parseAmount = (amount: Amount): any => {
+  let amount_fields: any = { value: 0, currency: "" };
+
+  if (typeof amount === "string") {
+    amount_fields.currency = "xrp";
+    amount_fields.value = dropsToXrp(amount);
+  } else {
+    amount_fields = amount;
+  }
+
+  return amount_fields;
+};
+
+export const validateOffersMatch = (
+  sell_offer: NFTOffer,
+  buy_offer: NFTOffer,
+  broker_address?: string
+): void => {
+  if (sell_offer.flags !== 1) throw errors.sell_offer_invalid;
+  if (buy_offer.flags === 1) throw errors.buy_offer_invalid;
+
+  if (
+    sell_offer.destination &&
+    ![...(broker_address ? [broker_address] : []), buy_offer.owner].includes(
+      sell_offer.destination
+    )
+  )
+    throw errors.sell_destination_invalid;
+
+  const parsedSell = parseAmount(sell_offer.amount);
+  const parsedBuy = parseAmount(buy_offer.amount);
+
+  if (
+    parsedSell.currency !== parsedBuy.currency ||
+    parsedSell.issuer !== parsedBuy.issuer ||
+    parsedSell.value > parsedBuy.value
+  )
+    throw errors.offers_not_match;
+};
+
+// Get Max Broker Fee
+export function getMaxBrokerFee(
+  sell_offer: NFTOffer,
+  buy_offer: NFTOffer
+): Amount {
+  try {
+    const parsedSell = parseAmount(sell_offer.amount);
+    const parsedBuy = parseAmount(buy_offer.amount);
+
+    const bigSell: BigNumber = new BigNumber(parsedSell.amount.value);
+    const bigBuy: BigNumber = new BigNumber(parsedBuy.amount.value);
+
+    const difference: BigNumber = bigSell.minus(bigBuy);
+
+    const brokerFee: Amount =
+      parsedSell.currency === "xrp"
+        ? xrpToDrops(difference.toNumber())
+        : {
+            value: difference.toString(),
+            currency: parsedSell.currency,
+            issuer: parsedSell.issuer,
+          };
+
+    return brokerFee;
+  } catch (e: any) {
+    throw e;
+  }
+}
 
 // Convert to Ripple Time
 export const convertToRippleTime = (time: number | Date | string): number => {

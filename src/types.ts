@@ -1,3 +1,5 @@
+import { Amount, NFTOffer } from "xrpl/dist/npm/models/common/index";
+
 export type NFTCategoryType =
   | "art"
   | "motion"
@@ -14,10 +16,18 @@ export interface AcceptOfferOptions {
   isBuy: boolean;
 }
 
-export interface NFTSaleOptions {
-  amount: number | string;
+export interface ParsedAmount {
+  value: string | number;
   currency: string;
   issuer?: string;
+}
+
+export interface Bid {
+  expiration?: number | Date | string;
+  amount: ParsedAmount;
+}
+export interface NFTSaleOptions {
+  amount: Amount;
   expiration?: number | Date | string;
   destination?: string;
 }
@@ -31,7 +41,18 @@ export interface NFT {
   nft_serial: number;
 }
 
-export interface Bid {}
+export interface BrokeredModeArgs {
+  nft_id: string;
+  sell_offer: NFTOffer;
+  buy_offer: NFTOffer;
+  max_broker_fee?: boolean;
+  broker_fee?: Amount;
+}
+
+export interface NFTOffers {
+  bids: NFTOffer[];
+  asks: NFTOffer[];
+}
 
 export interface NFTMetadata {
   animation_url?: string;

@@ -31,4 +31,26 @@ export default {
     error: "SG_ERROR: COL_FINALIZED",
     message: "This collection has been finalized and cannot be updated.",
   },
+  sell_offer_invalid: {
+    error: "US_ERROR: OFFER_INVALID",
+    message: "This is not a valid sell offer",
+  },
+  buy_offer_invalid: {
+    error: "US_ERROR: OFFER_INVALID",
+    message: "This is not a valid buy offer",
+  },
+  sell_destination_invalid: {
+    error: "US_ERROR: OFFER_INVALID",
+    message:
+      "Sell offer has a specified destination. Broker or Buyer are not the specified destination.",
+  },
+  offers_not_match: {
+    error: "US_ERROR: OFFERS_NOT_MATCH",
+    message:
+      "Offers are not a match. Currency or Issuer might be different, or buy offer amount is lower than the sale price.",
+  },
+  invalid_amount: {
+    error: "US_ERROR: INVALID_AMOUNT",
+    message: "Amount object is malformed.",
+  },
 };
