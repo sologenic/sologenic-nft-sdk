@@ -1,6 +1,6 @@
 import {
   Collection,
-  SologenicMinterProps,
+  SologenicNFTManagerProps,
   CollectionData,
   NFTSlot,
   NFTokenMintResult,
@@ -10,8 +10,8 @@ import {
   SignTransactionOptions,
   MintMultipleCopiesOptions,
   MintMultipleCopiesResult,
-  MinterMode,
   MintOptions,
+  Mode,
   NFT,
   NFTData,
 } from "../types";
@@ -34,12 +34,12 @@ import {
   modes,
   services,
   getAllAccountNFTS,
-} from "../utils";
+} from "../utils/index";
 import errors from "../utils/errors";
 import { version } from "../../package.json";
 
 export class SologenicNFTManager {
-  private _minterMode: MinterMode;
+  private _minterMode: Mode;
   private _xrplClient: Client;
   private _baseURL: string;
 
@@ -48,7 +48,7 @@ export class SologenicNFTManager {
   private _collectionData: Collection | null = null;
   private _collectionAddress: string | null = null;
 
-  constructor(props: SologenicMinterProps) {
+  constructor(props: SologenicNFTManagerProps) {
     if (!props.mode)
       throw {
         ...errors.property_missing,

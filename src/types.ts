@@ -1,5 +1,3 @@
-import { AxiosRequestHeaders } from "axios";
-
 export type NFTCategoryType =
   | "art"
   | "motion"
@@ -10,7 +8,7 @@ export type NFTCategoryType =
   | "tradingcards"
   | "collectibles";
 
-export type MinterMode = "devnet" | "mainnet" | "testnet";
+export type Mode = "devnet" | "mainnet" | "testnet";
 
 export interface NFT {
   Flags: number;
@@ -120,9 +118,13 @@ export interface NFTPayload {
   attributes?: NFTAttribute[];
 }
 
-export interface SologenicMinterProps {
-  mode: MinterMode;
+export interface SologenicNFTManagerProps {
+  mode: Mode;
   xrpl_node: string;
+}
+
+export interface SologenicNFTTraderProps {
+  mode: Mode;
 }
 
 export interface Collection {
