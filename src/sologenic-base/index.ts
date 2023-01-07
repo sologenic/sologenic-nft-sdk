@@ -13,7 +13,6 @@ import {
   TxResponse,
 } from "xrpl";
 import errors from "../utils/errors";
-import { version } from "../../package.json";
 import { getAllAccountNFTS, modes, toHex } from "../utils/index";
 import moment from "moment";
 
@@ -40,8 +39,6 @@ export class SologenicBaseModule {
     this._moduleMode = props.mode;
     this._xrplClient = new Client(props.xrpl_node);
     this._baseURL = modes[props.mode];
-
-    console.info(`Sologenic ${this._moduleName} Initialized: v${version}`);
   }
 
   getApiURL(): any {

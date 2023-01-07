@@ -12,8 +12,8 @@ import {
   MintOptions,
   NFTData,
 } from "../types";
-
-import { Transaction, TxResponse, Wallet, NFTokenMint } from "xrpl";
+import { version } from "../../package.json";
+import { Transaction, TxResponse, NFTokenMint } from "xrpl";
 import axios, { AxiosResponse } from "axios";
 import { encodeNFTTokenID, getBase64, toHex, services } from "../utils/index";
 import errors from "../utils/errors";
@@ -26,6 +26,8 @@ export class SologenicNFTManager extends SologenicBaseModule {
 
   constructor(props: SologenicNFTManagerProps) {
     super(props);
+
+    console.log(`Sologenic Manager Initialized: v${version}`);
   }
 
   getCollectionAddress(): string {
@@ -442,7 +444,7 @@ export class SologenicNFTManager extends SologenicBaseModule {
             tx.result.TransferFee,
             tx.result.Issuer ? tx.result.Issuer : tx.result.Account,
             tx.result.NFTokenTaxon,
-            nftsequence.ModifiedNode.PreviousFields.MintedNFTokens
+            nftsequence.ModifiedNode.PreviousFields.MintedNFTokens ?? 0
           );
 
           return {

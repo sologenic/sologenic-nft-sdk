@@ -47,6 +47,7 @@ export const parseAmount = (amount: Amount): any => {
   return amount_fields;
 };
 
+// Validate NFT Offers and if they match
 export const validateOffersMatch = (
   sell_offer: NFTOffer,
   buy_offer: NFTOffer,

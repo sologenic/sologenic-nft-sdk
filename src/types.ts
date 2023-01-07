@@ -50,8 +50,8 @@ export interface BrokeredModeArgs {
 }
 
 export interface NFTOffers {
-  bids: NFTOffer[];
-  asks: NFTOffer[];
+  buy_offers: NFTOffer[];
+  sell_offers: NFTOffer[];
 }
 
 export interface NFTMetadata {

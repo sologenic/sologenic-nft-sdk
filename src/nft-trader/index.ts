@@ -4,6 +4,7 @@ import {
   NFTokenCancelOffer,
   NFTokenCreateOffer,
   NFTokenCreateOfferFlags,
+  NFTSellOffersResponse,
   TxResponse,
   xrpToDrops,
 } from "xrpl";
@@ -15,6 +16,7 @@ import {
   NFTSaleOptions,
   BrokeredModeArgs,
   Bid,
+  NFTOffers,
 } from "../types";
 import errors from "../utils/errors";
 import {
@@ -22,28 +24,41 @@ import {
   getMaxBrokerFee,
   validateOffersMatch,
 } from "../utils/index";
+import { version } from "../../package.json";
 
 export class SologenicNFTTrader extends SologenicBaseModule {
-  _moduleName = "trader";
-
+  _moduleName = "Trader";
   constructor(props: SologenicNFTTraderProps) {
     super(props);
+
+    console.log(`Sologenic Trader Initialized: v${version}`);
   }
 
   // Add fetch NFT offers by NFT ID
-  async getNFTOffers(
-    nft_id: string,
-    side: "buy" | "sell"
-  ): Promise<NFTOffer[]> {
+  async getNFTOffers(nft_id: string): Promise<NFTOffers> {
     try {
       await this._checkConnection();
 
-      const offers: NFTBuyOffersResponse = await this._xrplClient.request({
-        command: `nft_${side}_offers`,
-        nft_id: nft_id,
-      });
+      const sell_offers: NFTOffer[] = await this._xrplClient
+        .request({
+          command: "nft_sell_offers",
+          nft_id: nft_id,
+        })
+        .then((r) => r.result.offers)
+        .catch((e) => []);
 
-      return offers.result.offers;
+      const buy_offers: NFTOffer[] = await this._xrplClient
+        .request({
+          command: "nft_buy_offers",
+          nft_id: nft_id,
+        })
+        .then((r) => r.result.offers)
+        .catch((e) => []);
+
+      return {
+        sell_offers: sell_offers,
+        buy_offers: buy_offers,
+      };
     } catch (e: any) {
       throw e;
     }
