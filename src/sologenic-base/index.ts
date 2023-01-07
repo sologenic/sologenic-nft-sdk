@@ -13,7 +13,7 @@ import {
   TxResponse,
 } from "xrpl";
 import errors from "../utils/errors";
-import { getAllAccountNFTS, modes, toHex } from "../utils/index";
+import { clio_servers, getAllAccountNFTS, modes, toHex } from "../utils/index";
 import moment from "moment";
 
 export class SologenicBaseModule {
@@ -23,6 +23,7 @@ export class SologenicBaseModule {
   protected _baseURL: string;
   protected _wallet: Wallet | null = null;
   protected _authHeaders: any = null;
+  protected _clioClient: Client;
 
   constructor(props: SologenicBaseProps) {
     if (!props.mode)
@@ -38,6 +39,7 @@ export class SologenicBaseModule {
 
     this._moduleMode = props.mode;
     this._xrplClient = new Client(props.xrpl_node);
+    this._clioClient = new Client(clio_servers[props.mode]);
     this._baseURL = modes[props.mode];
   }
 
@@ -174,9 +176,20 @@ export class SologenicBaseModule {
     }
   }
 
-  protected async _checkConnection(): Promise<void> {
+  protected async _checkConnection(
+    client: "clio" | "xrpl" = "xrpl"
+  ): Promise<void> {
     try {
-      if (!this._xrplClient.isConnected()) await this._xrplClient.connect();
+      switch (client) {
+        case "clio":
+          if (!this._clioClient.isConnected()) await this._clioClient.connect();
+          break;
+        case "xrpl":
+          if (!this._xrplClient.isConnected()) await this._xrplClient.connect();
+          break;
+        default:
+          throw "Need to pass a client type";
+      }
     } catch (e: any) {
       throw e;
     }

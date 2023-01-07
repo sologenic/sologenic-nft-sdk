@@ -11,6 +11,10 @@ import {
   MintMultipleCopiesResult,
   MintOptions,
   NFTData,
+  NFTActionsOptions,
+  NFTAction,
+  FullNFTData,
+  NFTClio,
 } from "../types";
 import { version } from "../../package.json";
 import { Transaction, TxResponse, NFTokenMint } from "xrpl";
@@ -66,24 +70,34 @@ export class SologenicNFTManager extends SologenicBaseModule {
     }
   }
 
-  async getNFTData(nft_id: string): Promise<NFTData> {
+  async getNFTData(nft_id: string): Promise<FullNFTData> {
     try {
+      await this._checkConnection();
+      await this._checkConnection("clio");
+
+      const nft_info = await this._clioClient.request({
+        command: "nft_info",
+        nft_id,
+      });
+
       const nft_data: NFTData = await axios({
         method: "get",
         baseURL: `${this._baseURL}/${services.nfts}/nfts/${nft_id}`,
       })
         .then((r) => {
           delete r.data.internal_id;
-
           return r.data;
         })
         .catch((e) => {
-          if (e.response.status === 404) throw errors.nft_not_found;
+          if (e.response.status === 404) return null;
 
           throw e;
         });
 
-      return nft_data;
+      return {
+        sologenic_info: nft_data,
+        xrpl_info: nft_info.result as NFTClio,
+      };
     } catch (e: any) {
       throw e;
     }
@@ -359,6 +373,34 @@ export class SologenicNFTManager extends SologenicBaseModule {
       delete burn_config.burn_amount_market_index;
 
       return burn_config;
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
+  async getNFTActions(
+    nft_id: string,
+    options?: NFTActionsOptions
+  ): Promise<NFTAction[]> {
+    try {
+      const typesFilter = options?.types ? options.types.join("&types=") : null;
+
+      const actions: NFTAction[] = await axios({
+        method: "get",
+        baseURL: `${this._baseURL}/${services["nfts"]}/nfts/${nft_id}/actions${
+          typesFilter ? `?types=${typesFilter}` : ""
+        }`,
+        params: {
+          limit: options?.limit ? options.limit : 50,
+          ...(options?.before_id ? { before_id: options.before_id } : {}),
+        },
+      })
+        .then((r) => r.data)
+        .catch((e) => {
+          throw e;
+        });
+
+      return actions;
     } catch (e: any) {
       throw e;
     }

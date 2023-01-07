@@ -165,7 +165,25 @@ This method takes one parameter.
 
 _Response_
 
-This method returns an object with the following properties:
+This method returns an object with 2 objects inside. `sologenic_info` and `xrpl_info`. If the NFT exists, `xrpl_info` should always be returned, if `sologenic_info` is `NULL` then it means the NFT was not minted on the sologenic platform.
+
+#### `xrpl_info`
+
+| Property     |                                                                                           Description | Example                                                                                        |
+| :----------- | ----------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------- |
+| nft_id       |                                                                                             NFTokenID | 000827107022610A05BAA45AE04D5B022D1FF298795EF9AB000083F100000000                               |
+| ledger_index |                                                               Current Ledger index of the XRPL Server | 76545315                                                                                       |
+| is_burned    |                                                                Whether the NFT has been burned or not | `false`                                                                                        |
+| issuer       |                                                                                       Issuing address | rBDu1BC6f1SKRvRxPiHZdeML5CRwByQTFG                                                             |
+| owner        |                                                                                 Current owner address | rBDu1BC6f1SKRvRxPiHZdeML5CRwByQTFG                                                             |
+| flags        |                                                              Flags of the settings enabled in the NFT | 8                                                                                              |
+| transfer_fee |                                        Royalty percentage the issuer gets after every sale of the NFT | 10000 (10%)                                                                                    |
+| nft_taxon    |                                                  Taxon for the NFT set on the NFTokenMint transaction | 12345                                                                                          |
+| nft_sequence |                                            Serial number of the NFT. Referenced to the Issuer account | 12                                                                                             |
+| uri          |                                   Arbitrary data set on the URI field of the NFTokenMint transaction. | https://ipfs.io/ipfs/bafybeie7cd4s2pv4e5tode7xjvqjlkpp5kuflqcl73keadixevqjoq3r3y/metadata.json |
+| validated    | States that the ledger index when this request was made has been validated on the XRP Ledger servers. | true                                                                                           |
+
+#### `sologenic_info`
 
 | Property               |                                                          Description | Example                                                                               |
 | :--------------------- | -------------------------------------------------------------------: | :------------------------------------------------------------------------------------ |

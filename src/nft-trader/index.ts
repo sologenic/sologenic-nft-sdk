@@ -1,10 +1,8 @@
 import {
-  NFTBuyOffersResponse,
   NFTokenAcceptOffer,
   NFTokenCancelOffer,
   NFTokenCreateOffer,
   NFTokenCreateOfferFlags,
-  NFTSellOffersResponse,
   TxResponse,
   xrpToDrops,
 } from "xrpl";
@@ -17,14 +15,19 @@ import {
   BrokeredModeArgs,
   Bid,
   NFTOffers,
+  CollectionTradingData,
+  NFTActionsOptions,
+  NFTAction,
 } from "../types";
 import errors from "../utils/errors";
 import {
   convertToRippleTime,
   getMaxBrokerFee,
+  services,
   validateOffersMatch,
 } from "../utils/index";
 import { version } from "../../package.json";
+import axios from "axios";
 
 export class SologenicNFTTrader extends SologenicBaseModule {
   _moduleName = "Trader";
@@ -220,6 +223,48 @@ export class SologenicNFTTrader extends SologenicBaseModule {
   }
 
   // Retrieve Collection Trading Data
+  async getCollectionTradingData(
+    address: string
+  ): Promise<CollectionTradingData> {
+    try {
+      const trading_data: Promise<CollectionTradingData> = await axios({
+        method: "get",
+        baseURL: `${this._baseURL}/${services["nfts"]}/collections/${address}`,
+      })
+        .then((r) => r.data.stats)
+        .catch((e) => {
+          throw e;
+        });
 
-  // Fetch NFT Trading History
+      return trading_data;
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
+  // Fetch NFT Trading History, this will only work for NFTs minted on the Sologenic Platform, or using the SologenicNFTManager
+  async getNFTTrades(
+    nft_id: string,
+    options?: NFTActionsOptions
+  ): Promise<NFTAction[]> {
+    try {
+      const trades: NFTAction[] = await axios({
+        method: "get",
+        baseURL: `${this._baseURL}/${services["nfts"]}/nfts/${nft_id}/actions`,
+        params: {
+          types: "nft_sold",
+          limit: options?.limit ? options.limit : 50,
+          ...(options?.before_id ? { before_id: options.before_id } : {}),
+        },
+      })
+        .then((r) => r.data)
+        .catch((e) => {
+          throw e;
+        });
+
+      return trades;
+    } catch (e: any) {
+      throw e;
+    }
+  }
 }

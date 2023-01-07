@@ -29,6 +29,12 @@ export const modes = {
   testnet: "https://api-testnet.test.sologenic.org/api/v1",
 };
 
+export const clio_servers = {
+  mainnet: "wss://s2-clio.ripple.com:51233/",
+  testnet: "wss://clio.altnet.rippletest.net:51233/",
+  devnet: "wss://clio.devnet.rippletest.net:51233/",
+};
+
 export const services = {
   mint: "nft-minter",
   nfts: "nft-marketplace",

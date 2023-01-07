@@ -32,6 +32,55 @@ export interface NFTSaleOptions {
   destination?: string;
 }
 
+export interface Price {
+  [key: string]: number | string;
+}
+
+export interface Stats {
+  "7d": number | string;
+  "24h": number | string;
+  "30d": number | string;
+  all_time: number | string;
+}
+
+export interface StatsInterface {
+  [key: string]: Stats;
+}
+
+export type NFTActionType =
+  | "nft_minted"
+  | "nft_offer_created"
+  | "nft_sale_started"
+  | "nft_sale_cancelled"
+  | "nft_offer_cancelled"
+  | "nft_sold"
+  | "nft_transferred"
+  | "nft_destroyed";
+
+export interface NFTAction {
+  type: NFTActionType;
+  account: string;
+  id: string;
+  nft_id: string;
+  txid: string;
+  happened_at: string;
+  standard: "XLS-20d" | "XLS-14d";
+  from_account?: string;
+  to_account?: string;
+  quote_amount?: number | string;
+  quote_currency?: string;
+  quote_issuer?: string;
+  is_standard_migration?: boolean;
+  minter?: string;
+}
+
+export interface CollectionTradingData {
+  floor_price: Price;
+  nft_count: number;
+  owner_count: number;
+  volume: StatsInterface;
+}
+
 export interface NFT {
   Flags: number;
   Issuer: string;
@@ -52,6 +101,12 @@ export interface BrokeredModeArgs {
 export interface NFTOffers {
   buy_offers: NFTOffer[];
   sell_offers: NFTOffer[];
+}
+
+export interface NFTActionsOptions {
+  before_id?: number | string;
+  limit?: number;
+  types?: NFTActionType[];
 }
 
 export interface NFTMetadata {
@@ -76,6 +131,25 @@ export interface NFTData {
   md5_hash: string;
   minted_txid: string;
   metadata: NFTMetadata;
+}
+
+export interface NFTClio {
+  nft_id: string;
+  ledger_index: number;
+  owner: string;
+  issuer: string;
+  is_burned?: boolean;
+  flags?: number;
+  transfer_fee?: number;
+  nft_taxon?: number;
+  nft_sequence?: number;
+  uri?: string;
+  validated: boolean;
+}
+
+export interface FullNFTData {
+  sologenic_info: NFTData | null;
+  xrpl_info: NFTClio;
 }
 
 export interface SignTransactionOptions {
