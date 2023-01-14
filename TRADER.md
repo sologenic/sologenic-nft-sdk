@@ -194,7 +194,6 @@ const result = await trader.setNFTForSale(nft_id, args);
 
 ### `placeBidOnNFT`
 
-e
 An async function that creates a buy offer for an NFT, thereby creating a bid that can be accepted by the owner of the NFT.
 
 _Params_
