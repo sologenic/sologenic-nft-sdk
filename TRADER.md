@@ -95,9 +95,9 @@ _Params_
 
 _Returns_
 
-| Param    | Type       |
-| :------- | :--------- |
-| response | TxResponse |
+| Param    | Type                                                         |
+| :------- | :----------------------------------------------------------- |
+| response | [TxResponse](https://js.xrpl.org/interfaces/TxResponse.html) |
 
 _Example_
 
@@ -130,9 +130,9 @@ _Params_
 
 _Returns_
 
-| Param    | Type       |
-| :------- | :--------- |
-| response | TxResponse |
+| Param    | Type                                                         |
+| :------- | :----------------------------------------------------------- |
+| response | [TxResponse](https://js.xrpl.org/interfaces/TxResponse.html) |
 
 _Example_
 
@@ -171,9 +171,9 @@ _Params_
 
 _Returns_
 
-| Param    | Type       |
-| :------- | :--------- |
-| response | TxResponse |
+| Param    | Type                                                         |
+| :------- | :----------------------------------------------------------- |
+| response | [TxResponse](https://js.xrpl.org/interfaces/TxResponse.html) |
 
 _Example_
 
@@ -207,9 +207,9 @@ _Params_
 
 _Returns_
 
-| Param    | Type       |
-| :------- | :--------- |
-| response | TxResponse |
+| Param    | Type                                                         |
+| :------- | :----------------------------------------------------------- |
+| response | [TxResponse](https://js.xrpl.org/interfaces/TxResponse.html) |
 
 _Example_
 
@@ -239,9 +239,9 @@ _Params_
 
 _Returns_
 
-| Param    | Type       |
-| :------- | :--------- |
-| response | TxResponse |
+| Param    | Type                                                         |
+| :------- | :----------------------------------------------------------- |
+| response | [TxResponse](https://js.xrpl.org/interfaces/TxResponse.html) |
 
 _Example_
 
