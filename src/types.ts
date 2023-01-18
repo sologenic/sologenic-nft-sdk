@@ -236,6 +236,10 @@ export interface SologenicBaseProps {
   xrpl_node: string;
 }
 
+// TODO => if we are only using these 3 properties, we should
+// remove this [key: string]: unknown extension.
+// if we are using something that might be in the extension,
+// we should explcitly type it as such
 export interface Collection {
   uid: string;
   issuer: string;
