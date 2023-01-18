@@ -242,8 +242,6 @@ export class SologenicNFTManager extends SologenicBaseModule {
     this._collectionData = await this._getCollectionData();
   }
 
-  // TODO => control flow in the try / catch makes it difficult to explicitly derive the return typ
-  // this should be modified
   async mint(
     nftData: NFTPayload,
     options?: MintOptions
@@ -352,7 +350,6 @@ export class SologenicNFTManager extends SologenicBaseModule {
     }
   }
 
-  // TODO => instad of deleting, shouldn't we just return the correct keys in a new object?
   async getBurnConfiguration() {
     try {
       console.info("Getting Burn Configuration...");
@@ -505,31 +502,27 @@ export class SologenicNFTManager extends SologenicBaseModule {
     }
   }
 
-  // TODO => why are we reducing r -> r.data if we never use it?
   private async _uploadNFTData(nftData: NFTPayload): Promise<string> {
     try {
       const nftSlot = this._getEmptyNFTSlot();
       console.info("Uploading NFT data...");
       console.info("Using NFT Slot => ", nftSlot);
 
+      const [file, thumbnail] = await Promise.all([
+        getBase64(nftData.file),
+        getBase64(nftData.thumbnail),
+      ]);
+
       await axios({
         baseURL: `${this._baseURL}/${services.mint}/nft/upload`,
         method: "post",
         headers: this._authHeaders,
         data: {
-          issuer: this._collectionAddress,
-          payload: {
-            ...nftData,
-            file: await getBase64(nftData.file),
-            thumbnail: await getBase64(nftData.thumbnail),
-          },
           uid: nftSlot.uid,
+          issuer: this._collectionAddress,
+          payload: { ...nftData, file, thumbnail },
         },
-      })
-        .then((r) => r.data)
-        .catch((e) => {
-          throw e;
-        });
+      });
 
       return nftSlot.uid;
     } catch (e: any) {
@@ -537,7 +530,6 @@ export class SologenicNFTManager extends SologenicBaseModule {
     }
   }
 
-  // XXX => good example of stripping to allow for inference
   private async _shipCollection(): Promise<boolean> {
     try {
       const { data } = await axios.post<{
