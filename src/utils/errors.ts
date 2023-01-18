@@ -53,5 +53,8 @@ export default {
     error: "US_ERROR: INVALID_AMOUNT",
     message: "Amount object is malformed.",
   },
-  ledger_error: (message: string) => ({ error: "LEDGER_ERROR", message }),
+  index_not_found: {
+    error: "LEGER_ERROR: INDEX_NOT_FOUND",
+    message: "Current Ledger Index not found.",
+  },
 };
