@@ -99,7 +99,7 @@ Returns information about the Sologenic API mode connection
 const url = minter.getApiURL();
 ```
 
-_Response_
+_Returns_
 
 This method returns an object with the following properties:
 
@@ -112,6 +112,8 @@ This method returns an object with the following properties:
 
 This method sets the default account to use.
 
+_Example_
+
 ```js
 const wallet_address = minter.setAccount(YOUR_WALLET_SECRET);
 // rBDu1BC6f1SKRvRxPiHZdeML5CRwByQTFG
@@ -120,6 +122,8 @@ const wallet_address = minter.setAccount(YOUR_WALLET_SECRET);
 ### `getAccountNFTS`
 
 This method returns ALL the NFTs owned by this account in reference to the ledger; to get the NFT metadata (name, description, etc) you will need to call the method [getNFTData](#getNFTData).
+
+_Example_
 
 ```js
 const nfts = await minter.getAccountNFTS();
@@ -133,7 +137,7 @@ This method takes one OPTIONAL parameter; an account address. If they account ad
 | :------ | -----: |
 | address | string |
 
-_Response_
+_Returns_
 This method returns an array of the NFTs owned by the passed account (or default account) on reference with the XRP Ledger. These are the properties on each NFT object
 
 | Property       | Description                                                                                                                                                                                                                                                                                                   |                                                                                                                                                                                      Example |
@@ -151,10 +155,6 @@ This method returns an array of the NFTs owned by the passed account (or default
 This method returns the data of an specific NFT using its NFTokenID.
 Note: If the NFT exists on the XRP Ledger but this method returns a NFT_NOT_FOUND, maybe the NFT was not minted on the Sologenic NFT Marketplace.
 
-```js
-const nft_data = await minter.getNFTData(NFTokenID);
-```
-
 _Params_
 
 This method takes one parameter.
@@ -163,7 +163,7 @@ This method takes one parameter.
 | :-------- | -----: | :--------------------------------------------------------------- |
 | NFTokenID | string | 000A2134C4E16036D649C037D2DE7C58780DE1D985EEB986483AE3C9000001AC |
 
-_Response_
+_Returns_
 
 This method returns an object with 2 objects inside. `sologenic_info` and `xrpl_info`. If the NFT exists, `xrpl_info` should always be returned, if `sologenic_info` is `NULL` then it means the NFT was not minted on the sologenic platform.
 
@@ -182,6 +182,12 @@ This method returns an object with 2 objects inside. `sologenic_info` and `xrpl_
 | nft_sequence |                                            Serial number of the NFT. Referenced to the Issuer account | 12                                                                                             |
 | uri          |                                   Arbitrary data set on the URI field of the NFTokenMint transaction. | https://ipfs.io/ipfs/bafybeie7cd4s2pv4e5tode7xjvqjlkpp5kuflqcl73keadixevqjoq3r3y/metadata.json |
 | validated    | States that the ledger index when this request was made has been validated on the XRP Ledger servers. | true                                                                                           |
+
+_Example_
+
+```js
+const nft_data = await minter.getNFTData(NFTokenID);
+```
 
 #### `sologenic_info`
 
@@ -210,6 +216,8 @@ This method returns an object with 2 objects inside. `sologenic_info` and `xrpl_
 
 Returns the address of the wallet which was used to initialize the Sologenic Minter
 
+_Example_
+
 ```js
 const address = minter.getWalletAddress();
 // rBDu1BC6f1SKRvRxPiHZdeML5CRwByQTFG
@@ -219,11 +227,7 @@ const address = minter.getWalletAddress();
 
 Returns the current burn configuration to get NFT Slots
 
-```js
-const config = await minter.getBurnConfiguration();
-```
-
-Response
+_Returns_
 
 | Property      |                                    Value |
 | :------------ | ---------------------------------------: |
@@ -231,14 +235,16 @@ Response
 | burn_currency | 534F4C4F00000000000000000000000000000000 |
 | burn_issuer   |       rsoLo2S1kiGeCcn6hCUXVrCpGMWLrRrLZz |
 
+_Example_
+
+```js
+const config = await minter.getBurnConfiguration();
+```
+
 ### `generateNFTSlots`
 
 Generates NFT Slots by burning SOLO.
 NOTE: This method requires the connected wallet to have a positive SOLO Balance
-
-```js
-const slots_generation = await generateNFTSlots(1);
-```
 
 _Params_
 
@@ -246,7 +252,7 @@ _Params_
 | :----- | :--- | :------: | :-----: |
 | amount | int  |  `true`  |    1    |
 
-_Response_
+_Returns_
 
 | Property    |                 Description |                                                          Example |
 | :---------- | --------------------------: | ---------------------------------------------------------------: |
@@ -254,11 +260,44 @@ _Response_
 | hash        |       Burn Transaction Hash | 1016EC6C70C9C2CD9D3C6B8A8439AA538409181DBE1E5D56698BDAE61AE03608 |
 | burns_count |    Amount of Slots acquired |                                                                1 |
 
+_Example_
+
+```js
+const slots_generation = await generateNFTSlots(1);
+```
+
 ### `createCollection`
 
 Creates a new collection or returns the current unfinished collection.
 NOTE: If there is an unfinished collection, the data passed will override the current collection information.
 NOTE: This method sets the recently created (or updated) collection as the default to mint NFTs on
+
+_Params_
+
+This method takes an object with all the data for the Collection.
+
+| Property     | Type   | Required | Description                                                                                    |                  Example                   |
+| :----------- | :----- | :------: | :--------------------------------------------------------------------------------------------- | :----------------------------------------: |
+| name         | string |  `true`  | The name for the collection.                                                                   |          "My Awesome Collection"           |
+| description  | string | `false`  | The description for the collection.                                                            | "My Awesome Description for my Collection" |
+| cover        | Buffer | `false`  | Buffer for the cover of the collection                                                         |       <Buffer 08 06 07 05 03 00 09>        |
+| thumbnail    | Buffer | `false`  | Buffer for the thumbnail of the collection                                                     |       <Buffer 08 06 07 05 03 00 09>        |
+| transfer_fee | int    | `false`  | Royalties for the NFTs within this collection. NOTE: This can be overriden when minting an NFT |                   10000                    |
+
+_Returns_
+
+| Property      |                                                                                                  Description |                                                                                   Example |
+| :------------ | -----------------------------------------------------------------------------------------------------------: | ----------------------------------------------------------------------------------------: |
+| issuer        |                                                                                 Identifier of the collection |                                                        rN7DsVCsJ6vRQtNMD8yMLeKvovSXM5P3Dg |
+| name          |                                                                                       Name of the collection |                                                                   "My Awesome collection" |
+| description   |                                                                                Description of the collection |                                                "My Awesome Description for my collection" |
+| nfts          | List of NFT Slots, any slot can be empty (available) or filled (an nft has been uploaded but not minted yet) |                                     See [`getCollectionNFTSlots`](#getcollectionnftslots) |
+| cover         |                                                                                    URL of the uploaded cover |     https://storage.googleapis.com/sg-nft-images/cover/rN7DsVCsJ6vRQtNMD8yMLeKvovSXM5P3Dg |
+| thumbnail     |                                                                                URL of the uploaded thumbnail | https://storage.googleapis.com/sg-nft-images/thumbnail/rN7DsVCsJ6vRQtNMD8yMLeKvovSXM5P3Dg |
+| unusued_burns |                                                                            Amount of available slots to mint |                                                                                         5 |
+| minted_nfts   |                                                              List of ALL minted NFTs within this collections |                                                                                     NFT[] |
+
+_Example_
 
 ```js
 import fs from "fs";
@@ -279,9 +318,14 @@ const collectionData = {
 const new_collection = await minter.createCollection(collectionData);
 ```
 
+### `updateCollection`
+
+Updates the current set collection.
+
 _Params_
 
 This method takes an object with all the data for the Collection.
+NOTE: Only unfinished collections can be updated.
 
 | Property     | Type   | Required | Description                                                                                    |                  Example                   |
 | :----------- | :----- | :------: | :--------------------------------------------------------------------------------------------- | :----------------------------------------: |
@@ -291,22 +335,11 @@ This method takes an object with all the data for the Collection.
 | thumbnail    | Buffer | `false`  | Buffer for the thumbnail of the collection                                                     |       <Buffer 08 06 07 05 03 00 09>        |
 | transfer_fee | int    | `false`  | Royalties for the NFTs within this collection. NOTE: This can be overriden when minting an NFT |                   10000                    |
 
-_Response_
+_Returns_
 
-| Property      |                                                                                                  Description |                                                                                   Example |
-| :------------ | -----------------------------------------------------------------------------------------------------------: | ----------------------------------------------------------------------------------------: |
-| issuer        |                                                                                 Identifier of the collection |                                                        rN7DsVCsJ6vRQtNMD8yMLeKvovSXM5P3Dg |
-| name          |                                                                                       Name of the collection |                                                                   "My Awesome collection" |
-| description   |                                                                                Description of the collection |                                                "My Awesome Description for my collection" |
-| nfts          | List of NFT Slots, any slot can be empty (available) or filled (an nft has been uploaded but not minted yet) |                                     See [`getCollectionNFTSlots`](#getcollectionnftslots) |
-| cover         |                                                                                    URL of the uploaded cover |     https://storage.googleapis.com/sg-nft-images/cover/rN7DsVCsJ6vRQtNMD8yMLeKvovSXM5P3Dg |
-| thumbnail     |                                                                                URL of the uploaded thumbnail | https://storage.googleapis.com/sg-nft-images/thumbnail/rN7DsVCsJ6vRQtNMD8yMLeKvovSXM5P3Dg |
-| unusued_burns |                                                                            Amount of available slots to mint |                                                                                         5 |
-| minted_nfts   |                                                              List of ALL minted NFTs within this collections |                                                                                     NFT[] |
+This method doesn't return a response. After calling this method, you need to call `await minter.getCollectionData()` to see the updated collection data.
 
-### `updateCollection`
-
-Updates the current set collection.
+_Example_
 
 ```js
 import fs from "fs";
@@ -335,34 +368,19 @@ const collection = await minter.getCollectionData();
 
 ```
 
-_Params_
-
-This method takes an object with all the data for the Collection.
-NOTE: Only unfinished collections can be updated.
-
-| Property     | Type   | Required | Description                                                                                    |                  Example                   |
-| :----------- | :----- | :------: | :--------------------------------------------------------------------------------------------- | :----------------------------------------: |
-| name         | string |  `true`  | The name for the collection.                                                                   |          "My Awesome Collection"           |
-| description  | string | `false`  | The description for the collection.                                                            | "My Awesome Description for my Collection" |
-| cover        | Buffer | `false`  | Buffer for the cover of the collection                                                         |       <Buffer 08 06 07 05 03 00 09>        |
-| thumbnail    | Buffer | `false`  | Buffer for the thumbnail of the collection                                                     |       <Buffer 08 06 07 05 03 00 09>        |
-| transfer_fee | int    | `false`  | Royalties for the NFTs within this collection. NOTE: This can be overriden when minting an NFT |                   10000                    |
-
-_Response_
-
-This method doesn't return a response. After calling this method, you need to call `await minter.getCollectionData()` to see the updated collection data.
-
 ### `getAllCollections`
 
 This method returns an Array of all the collections available to the account.
 
+_Returns_
+
+An array of Collection Objects. These are the properties of the Collection object. Please see [`getCollectionData`](#getcollectiondata) to see properties of the Collection object
+
+_Example_
+
 ```js
 const collections = await minter.getAllCollections();
 ```
-
-_Response_
-
-An array of Collection Objects. These are the properties of the Collection object. Please see [`getCollectionData`](#getcollectiondata) to see properties of the Collection object
 
 ### `getCollectionAddress`
 
@@ -377,7 +395,7 @@ const collection_address = await minter.getCollectionAddress();
 
 This method returns the data of the default collection
 
-_Response_
+_Returns_
 
 | Property     | Description                                                                                      |                                                                                     Example |
 | :----------- | :----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------: |
@@ -394,7 +412,7 @@ _Response_
 
 This method returns an Array of all the NFT Slots of the default collection, both available and already uploaded, but not minted, NFTs.
 
-_Response_
+_Returns_
 
 These are the properties of each NFT Slot.
 
@@ -415,6 +433,35 @@ These are the properties of each NFT Slot.
 ### `mint`
 
 This method mints and NFT within the default collection if there are any NFT Slots available.
+
+_Params_
+
+This method takes two parameters an Object with all the data of the NFT and an Object with options.
+
+#### NFT DATA
+
+| Property     | Type           | Required |
+| :----------- | :------------- | :------: |
+| file         | Buffer         |  `true`  |
+| thumbnail    | Buffer         |  `true`  |
+| name         | string         |  `true`  |
+| category     | string         |  `true`  |
+| only_xrp     | boolean        |  `true`  |
+| is_explicit  | boolean        |  `true`  |
+| transfer_fee | int            | `false`  |
+| description  | string         | `false`  |
+| external_url | URL            | `false`  |
+| attributes   | NFTAttribute[] | `false`  |
+
+```js
+interface NFTAttribute {
+  trait_type: string;
+  value: string | number;
+  max_value?: number;
+}
+```
+
+_Example_
 
 ```js
 import fs from "fs";
@@ -448,33 +495,6 @@ const nft = {
 const { NFTokenID, mint_tx_hash } = await minter.mint(nft);
 ```
 
-_Params_
-
-This method takes two parameters an Object with all the data of the NFT and an Object with options.
-
-#### NFT DATA
-
-| Property     | Type           | Required |
-| :----------- | :------------- | :------: |
-| file         | Buffer         |  `true`  |
-| thumbnail    | Buffer         |  `true`  |
-| name         | string         |  `true`  |
-| category     | string         |  `true`  |
-| only_xrp     | boolean        |  `true`  |
-| is_explicit  | boolean        |  `true`  |
-| transfer_fee | int            | `false`  |
-| description  | string         | `false`  |
-| external_url | URL            | `false`  |
-| attributes   | NFTAttribute[] | `false`  |
-
-```js
-interface NFTAttribute {
-  trait_type: string;
-  value: string | number;
-  max_value?: number;
-}
-```
-
 #### OPTIONS
 
 | Property | Type    | Required | Description                                                                                                                                                                                                                                    |
@@ -482,7 +502,7 @@ interface NFTAttribute {
 | autoBurn | boolean | `false`  | If the minter should attempt to burn SOLO for more NFT Slots if required                                                                                                                                                                       |
 | onBehalf | string  | `false`  | If this NFT is being minted on behalf of another account. The other account should have the initating address as Minter on their AccountRoot object. See [NFTokenMint](https://xrpl.org/nftokenmint.html#issuing-on-behalf-of-another-account) |
 
-_Response_
+_Returns_
 
 This method returns an object, these are the properties of the object
 
@@ -492,6 +512,17 @@ This method returns an object, these are the properties of the object
 | NFTokenID    | 000827107022610A05BAA45AE04D5B022D1FF298795EF9ABE4FAB9DF0000000A |
 
 ### `mintMultipleCopies`
+
+_Params_
+
+This method takes two parameters.
+
+| Param   | Type                                    | Required |
+| :------ | :-------------------------------------- | :------: |
+| nft     | [See `mint()` method for params](#mint) |  `true`  |
+| options | MintMultipleCopiesOptions               |  `true`  |
+
+_Example_
 
 ```js
 import fs from "fs";
@@ -530,15 +561,6 @@ const options = {
 const copies_result = await minter.mintMultipleCopies(nft, options);
 ```
 
-_Params_
-
-This method takes two parameters.
-
-| Param   | Type                                    | Required |
-| :------ | :-------------------------------------- | :------: |
-| nft     | [See `mint()` method for params](#mint) |  `true`  |
-| options | MintMultipleCopiesOptions               |  `true`  |
-
 #### OPTIONS
 
 These are the properties of the Options object.
@@ -549,7 +571,7 @@ These are the properties of the Options object.
 | autoBurn       | boolean | `false`  | If the minter should attempt to burn SOLO for more NFT Slots if required                                                                                                                                                                       |
 | onBehalf       | string  | `false`  | If this NFT is being minted on behalf of another account. The other account should have the initating address as Minter on their AccountRoot object. See [NFTokenMint](https://xrpl.org/nftokenmint.html#issuing-on-behalf-of-another-account) |
 
-_Response_
+_Returns_
 
 This method returns an object with the next properties
 
