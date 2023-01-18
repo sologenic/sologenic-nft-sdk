@@ -2,7 +2,6 @@ import {
   Collection,
   SologenicNFTManagerProps,
   CollectionData,
-  NFTSlot,
   NFTokenMintResult,
   NFTPayload,
   BurnResult,
@@ -17,13 +16,7 @@ import {
   NFTClio,
 } from "../types";
 import { version } from "../../package.json";
-import {
-  Transaction,
-  TxResponse,
-  NFTokenMint,
-  AccountInfoRequest,
-  AccountInfoResponse,
-} from "xrpl";
+import { Transaction, TxResponse, NFTokenMint } from "xrpl";
 import axios from "axios";
 import { encodeNFTTokenID, getBase64, toHex, services } from "../utils/index";
 import errors from "../utils/errors";
