@@ -17,8 +17,14 @@ import {
   NFTClio,
 } from "../types";
 import { version } from "../../package.json";
-import { Transaction, TxResponse, NFTokenMint } from "xrpl";
-import axios, { AxiosResponse } from "axios";
+import {
+  Transaction,
+  TxResponse,
+  NFTokenMint,
+  AccountInfoRequest,
+  AccountInfoResponse,
+} from "xrpl";
+import axios from "axios";
 import { encodeNFTTokenID, getBase64, toHex, services } from "../utils/index";
 import errors from "../utils/errors";
 import { SologenicBaseModule } from "../sologenic-base/index";
@@ -30,46 +36,43 @@ export class SologenicNFTManager extends SologenicBaseModule {
 
   constructor(props: SologenicNFTManagerProps) {
     super(props);
-
     console.log(`Sologenic Manager Initialized: v${version}`);
   }
 
-  getCollectionAddress(): string {
+  getCollectionAddress() {
     try {
       if (this._collectionAddress) return this._collectionAddress;
-
       throw errors.collection_not_set;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
-  async getCollectionNFTSlots(): Promise<NFTSlot[]> {
+  async getCollectionNFTSlots() {
     try {
       if (this._collectionAddress) {
         this._collectionData = await this._getCollectionData();
-
         return this._collectionData.nfts;
       }
-
       throw errors.collection_not_set;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
-  async getCollectionData(): Promise<Collection> {
+  async getCollectionData() {
     try {
       if (this._collectionAddress) {
         return (this._collectionData = await this._getCollectionData());
       }
-
       throw errors.collection_not_set;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
+  // TODO => figure out why type inference is not properly happening for clio requests
+  // TODO => Improve type inference for the NFTData call
   async getNFTData(nft_id: string): Promise<FullNFTData> {
     try {
       await this._checkConnection();
@@ -90,7 +93,6 @@ export class SologenicNFTManager extends SologenicBaseModule {
         })
         .catch((e) => {
           if (e.response.status === 404) return null;
-
           throw e;
         });
 
@@ -103,11 +105,11 @@ export class SologenicNFTManager extends SologenicBaseModule {
     }
   }
 
-  async getAllCollections(): Promise<Collection[]> {
+  async getAllCollections() {
     try {
       this._checkWalletConnection();
 
-      const collections: Collection[] = await axios({
+      return await axios({
         method: "get",
         headers: this._authHeaders,
         baseURL: `${this._baseURL}/${services.mint}/collection/all`,
@@ -127,9 +129,7 @@ export class SologenicNFTManager extends SologenicBaseModule {
         .catch((e) => {
           throw e;
         });
-
-      return collections;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
@@ -178,12 +178,12 @@ export class SologenicNFTManager extends SologenicBaseModule {
       delete burn_result.validated;
 
       return burn_result;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
-  async createCollection(collectionData: CollectionData): Promise<Collection> {
+  async createCollection(collectionData: CollectionData) {
     try {
       this._checkWalletConnection();
 
@@ -201,12 +201,12 @@ export class SologenicNFTManager extends SologenicBaseModule {
       await this.updateCollection(collectionData);
 
       return this._collectionData as Collection;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
-  async updateCollection(collectionData: CollectionData): Promise<Collection> {
+  async updateCollection(collectionData: CollectionData) {
     try {
       this._checkWalletConnection();
 
@@ -244,11 +244,13 @@ export class SologenicNFTManager extends SologenicBaseModule {
     }
   }
 
-  async setCollectionAddress(address: string): Promise<void> {
+  async setCollectionAddress(address: string) {
     this._collectionAddress = address;
     this._collectionData = await this._getCollectionData();
   }
 
+  // TODO => control flow in the try / catch makes it difficult to explicitly derive the return typ
+  // this should be modified
   async mint(
     nftData: NFTPayload,
     options?: MintOptions
@@ -352,53 +354,43 @@ export class SologenicNFTManager extends SologenicBaseModule {
         nfts: minted_nfts,
         error,
       };
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
-  async getBurnConfiguration(): Promise<BurnConfiguration> {
+  // TODO => instad of deleting, shouldn't we just return the correct keys in a new object?
+  async getBurnConfiguration() {
     try {
       console.info("Getting Burn Configuration...");
-      const burn_config: BurnConfiguration = await axios({
-        method: "get",
-        baseURL: `${this._baseURL}/${services.mint}/solo/burn_config`,
-      })
-        .then((r) => r.data)
-        .catch((e) => {
-          throw e;
-        });
+
+      const { data: burn_config } = await axios.get<BurnConfiguration>(
+        `${this._baseURL}/${services.mint}/solo/burn_config`
+      );
 
       delete burn_config.burn_amount_issuance;
       delete burn_config.burn_amount_market_index;
 
       return burn_config;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
-  async getNFTActions(
-    nft_id: string,
-    options?: NFTActionsOptions
-  ): Promise<NFTAction[]> {
+  async getNFTActions(nft_id: string, options?: NFTActionsOptions) {
     try {
       const typesFilter = options?.types ? options.types.join("&types=") : null;
 
-      const actions: NFTAction[] = await axios({
-        method: "get",
-        baseURL: `${this._baseURL}/${services["nfts"]}/nfts/${nft_id}/actions${
-          typesFilter ? `?types=${typesFilter}` : ""
-        }`,
+      const queryUrl = `${this._baseURL}/${
+        services["nfts"]
+      }/nfts/${nft_id}/actions${typesFilter ? `?types=${typesFilter}` : ""}`;
+
+      const { data: actions } = await axios.get<NFTAction[]>(queryUrl, {
         params: {
           limit: options?.limit ? options.limit : 50,
           ...(options?.before_id ? { before_id: options.before_id } : {}),
         },
-      })
-        .then((r) => r.data)
-        .catch((e) => {
-          throw e;
-        });
+      });
 
       return actions;
     } catch (e: any) {
@@ -407,14 +399,14 @@ export class SologenicNFTManager extends SologenicBaseModule {
   }
 
   // Private Methods
-  private _getEmptyNFTSlot(): NFTSlot {
+  private _getEmptyNFTSlot() {
     console.info("Getting next available NFT slot...");
     const collection = this._collectionData as Collection;
 
     if (collection.nfts.length === 0) throw errors.nft_slots_not_available;
 
-    const nft_slot: NFTSlot | undefined = this._collectionData?.nfts.find(
-      (slot: NFTSlot) => slot.currency === null
+    const nft_slot = this._collectionData?.nfts?.find(
+      (slot) => slot.currency === null
     );
 
     if (!nft_slot) throw errors.nft_slots_not_available;
@@ -422,26 +414,21 @@ export class SologenicNFTManager extends SologenicBaseModule {
     return nft_slot;
   }
 
-  private async _submitBurnTxHash(tx_hash: string): Promise<BurnResult> {
+  private async _submitBurnTxHash(tx_hash: string) {
     try {
-      const response: Promise<BurnResult> = axios({
-        method: "post",
-        baseURL: `${this._baseURL}/${services.mint}/solo/burn`,
-        headers: this._authHeaders,
-        data: {
-          hash: tx_hash,
-          type: "mint",
-        },
-      })
-        .then((r) => {
-          return r.data;
-        })
-        .catch((e) => {
-          throw e;
-        });
+      const { data } = await axios.post<BurnResult>(
+        `${this._baseURL}/${services.mint}/solo/burn`,
+        {
+          headers: this._authHeaders,
+          data: {
+            hash: tx_hash,
+            type: "mint",
+          },
+        }
+      );
 
-      return response;
-    } catch (e: any) {
+      return data;
+    } catch (e) {
       throw e;
     }
   }
@@ -504,35 +491,31 @@ export class SologenicNFTManager extends SologenicBaseModule {
     }
   }
 
-  private async _prepareMintTransaction(
-    nftUID: string,
-    onBehalf?: string
-  ): Promise<NFTokenMint> {
+  private async _prepareMintTransaction(nftUID: string, onBehalf?: string) {
     try {
       console.info("Preparing NFTokenMint Transaction...");
-      const mint_transaction: NFTokenMint = await axios({
-        baseURL: `${this._baseURL}/${services.mint}/nft/prepareMint`,
-        method: "post",
-        headers: this._authHeaders,
-        data: {
-          uid: nftUID,
-          ...(onBehalf ? { on_behalf: onBehalf } : {}),
-        },
-      })
-        .then((r) => r.data.response.tx)
-        .catch((e) => {
-          throw e;
-        });
 
-      return mint_transaction;
+      const { data } = await axios.post<{ response: { tx: NFTokenMint } }>(
+        `${this._baseURL}/${services.mint}/nft/prepareMint`,
+        {
+          headers: this._authHeaders,
+          data: {
+            uid: nftUID,
+            ...(onBehalf ? { on_behalf: onBehalf } : {}),
+          },
+        }
+      );
+
+      return data.response.tx;
     } catch (e: any) {
       throw e;
     }
   }
 
+  // TODO => why are we reducing r -> r.data if we never use it?
   private async _uploadNFTData(nftData: NFTPayload): Promise<string> {
     try {
-      const nftSlot: NFTSlot = this._getEmptyNFTSlot();
+      const nftSlot = this._getEmptyNFTSlot();
       console.info("Uploading NFT data...");
       console.info("Using NFT Slot => ", nftSlot);
 
@@ -561,43 +544,43 @@ export class SologenicNFTManager extends SologenicBaseModule {
     }
   }
 
+  // XXX => good example of stripping to allow for inference
   private async _shipCollection(): Promise<boolean> {
     try {
-      const shipped: AxiosResponse = await axios({
-        baseURL: `${this._baseURL}/${services.mint}/collection/ship`,
-        method: "post",
+      const { data } = await axios.post<{
+        response: { shipped: boolean };
+      }>(`${this._baseURL}/${services.mint}/collection/ship`, {
+        headers: this._authHeaders,
         data: {
           issuer: this._collectionAddress,
           standard: "xls20d",
         },
-        headers: this._authHeaders,
       });
 
-      if (shipped.data?.response?.shipped) return true;
+      if (data.response.shipped) return true;
 
       throw errors.unknown;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
-  private async _getCollectionData(): Promise<Collection> {
+  private async _getCollectionData() {
     try {
       this._checkWalletConnection();
 
       if (this._collectionAddress) {
         console.info("Getting Collection Data...");
 
-        const collection = await axios({
-          url: `${this._baseURL}/${services.mint}/collection/assemble`,
-          method: "post",
-          headers: this._authHeaders,
-          data: { issuer: this._collectionAddress },
-        })
-          .then((res) => res.data.response)
-          .catch((e: any) => {
-            throw e;
-          });
+        const {
+          data: { response: collection },
+        } = await axios.post<{ response: Collection }>(
+          `${this._baseURL}/${services.mint}/collection/assemble`,
+          {
+            headers: this._authHeaders,
+            data: { issuer: this._collectionAddress },
+          }
+        );
 
         delete collection.activated;
         delete collection.activation_fee;
@@ -608,7 +591,7 @@ export class SologenicNFTManager extends SologenicBaseModule {
         return collection;
       }
       throw errors.collection_not_set;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
