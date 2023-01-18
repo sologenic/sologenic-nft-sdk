@@ -43,32 +43,30 @@ export class SologenicBaseModule {
     this._baseURL = modes[props.mode];
   }
 
-  getApiURL(): any {
+  getApiURL() {
     return {
       mode: this._moduleMode,
       url: modes[this._moduleMode],
     };
   }
 
-  getWalletAddress(): string {
+  getWalletAddress() {
     try {
       const wallet: Wallet = this._checkWalletConnection();
-
       return wallet.classicAddress;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
-  setAccount(seed: string): Wallet {
+  setAccount(seed: string) {
     this._wallet = Wallet.fromSecret(seed);
     this._setAuthHeaders();
     setInterval(this._setAuthHeaders.bind(this), 60000);
-
     return this._wallet;
   }
 
-  async getAccountNFTS(account?: string): Promise<NFT[]> {
+  async getAccountNFTS(account?: string) {
     try {
       await this._checkConnection();
 
@@ -76,18 +74,17 @@ export class SologenicBaseModule {
 
       const wallet = this._checkWalletConnection();
       return await getAllAccountNFTS(this._xrplClient, wallet.classicAddress);
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
-  protected _checkWalletConnection(): Wallet {
+  protected _checkWalletConnection() {
     if (!this._wallet) throw errors.wallet_not_connected;
-
     return this._wallet;
   }
 
-  protected _setAuthHeaders(): void {
+  protected _setAuthHeaders() {
     if (this._wallet)
       this._authHeaders = {
         authorization: this._generateAuthToken(),
@@ -95,7 +92,7 @@ export class SologenicBaseModule {
       };
   }
 
-  protected _generateAuthToken(): string | void {
+  protected _generateAuthToken() {
     if (this._wallet) {
       console.info("Generating Authentication Token...");
       // Transaction to sign
@@ -113,13 +110,11 @@ export class SologenicBaseModule {
         ],
       };
 
-      const { tx_blob } = this._wallet.sign(tx);
-
-      // Return tx_blob
-      return tx_blob;
+      return this._wallet.sign(tx).tx_blob;
     }
   }
 
+  // TODO -> why is thie beineg exposed as a separate function when it's always being called right before submit?
   protected async _signTransaction(
     tx: Transaction,
     options?: SignTransactionOptions
@@ -127,17 +122,23 @@ export class SologenicBaseModule {
     try {
       console.info("Signing TX => ", tx);
 
+      // TODO => fix control flow here. We absolute CANNOT do double assertions like this, becaue in principle we don't
+      // actually know if wallet is truthy here. If typescript thinks it can be nullish, we should explicity comp for that.
+
       const wallet: Wallet = this._wallet as Wallet;
+      // eg, the text line should simply be if (!wallet) throw ...
+
       // Instantiate a Wallet to sign with
       if (options?.autofill) {
         await this._checkConnection();
 
-        const account_info: AccountInfoResponse =
-          await this._xrplClient.request({
-            command: "account_info",
-            account: wallet.classicAddress,
-            ledger_index: "current",
-          });
+        const account_info = await this._xrplClient.request({
+          command: "account_info",
+          account: wallet.classicAddress,
+          ledger_index: "current",
+        });
+
+        // same here, this double assertion is wrong and should be handled. we need additional null checks, not type assertions.
 
         const current_ledger_sequence: number = account_info.result
           .ledger_current_index as number;
@@ -154,31 +155,29 @@ export class SologenicBaseModule {
       const { tx_blob } = wallet.sign(tx);
 
       return tx_blob;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
-  protected async _submitSignedTxToLedger(
-    tx_blob: string
-  ): Promise<TxResponse> {
+  protected async _submitSignedTxToLedger(tx_blob: string) {
     try {
       console.info("Submitting Transaction to the Ledger...");
       await this._checkConnection();
 
-      const result: TxResponse = await this._xrplClient.submitAndWait(tx_blob, {
+      // TODO => here also, we should add some if (!wallet) throw ...
+
+      const result = await this._xrplClient.submitAndWait(tx_blob, {
         wallet: this._wallet as Wallet,
       });
 
       return result;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
-  protected async _checkConnection(
-    client: "clio" | "xrpl" = "xrpl"
-  ): Promise<void> {
+  protected async _checkConnection(client: "clio" | "xrpl" = "xrpl") {
     try {
       switch (client) {
         case "clio":
@@ -190,7 +189,7 @@ export class SologenicBaseModule {
         default:
           throw "Need to pass a client type";
       }
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
