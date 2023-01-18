@@ -4,14 +4,7 @@ import {
   NFT,
   SignTransactionOptions,
 } from "../types";
-import {
-  Client,
-  Wallet,
-  Transaction,
-  AccountInfoResponse,
-  xrpToDrops,
-  TxResponse,
-} from "xrpl";
+import { Client, Wallet, Transaction, xrpToDrops } from "xrpl";
 import errors from "../utils/errors";
 import { clio_servers, getAllAccountNFTS, modes, toHex } from "../utils/index";
 import moment from "moment";
@@ -114,19 +107,16 @@ export class SologenicBaseModule {
     }
   }
 
-  // TODO -> why is thie beineg exposed as a separate function when it's always being called right before submit?
   protected async _signTransaction(
     tx: Transaction,
     options?: SignTransactionOptions
-  ): Promise<string> {
+  ) {
     try {
       console.info("Signing TX => ", tx);
 
-      // TODO => fix control flow here. We absolute CANNOT do double assertions like this, becaue in principle we don't
-      // actually know if wallet is truthy here. If typescript thinks it can be nullish, we should explicity comp for that.
+      const wallet = this._wallet;
 
-      const wallet: Wallet = this._wallet as Wallet;
-      // eg, the text line should simply be if (!wallet) throw ...
+      if (!wallet) throw errors.wallet_not_connected;
 
       // Instantiate a Wallet to sign with
       if (options?.autofill) {
@@ -138,12 +128,13 @@ export class SologenicBaseModule {
           ledger_index: "current",
         });
 
-        // same here, this double assertion is wrong and should be handled. we need additional null checks, not type assertions.
+        const current_ledger_sequence =
+          account_info.result.ledger_current_index;
 
-        const current_ledger_sequence: number = account_info.result
-          .ledger_current_index as number;
+        if (!current_ledger_sequence)
+          throw errors.ledger_error("Current Ledger Sequence not found.");
 
-        const current_account_sequence: number =
+        const current_account_sequence =
           account_info.result.account_data.Sequence;
 
         tx.LastLedgerSequence = current_ledger_sequence + 15;
@@ -165,10 +156,10 @@ export class SologenicBaseModule {
       console.info("Submitting Transaction to the Ledger...");
       await this._checkConnection();
 
-      // TODO => here also, we should add some if (!wallet) throw ...
+      if (!this._wallet) throw errors.wallet_not_connected;
 
       const result = await this._xrplClient.submitAndWait(tx_blob, {
-        wallet: this._wallet as Wallet,
+        wallet: this._wallet,
       });
 
       return result;
