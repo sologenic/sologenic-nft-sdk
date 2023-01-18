@@ -38,40 +38,35 @@ export class SologenicNFTTrader extends SologenicBaseModule {
   }
 
   // Add fetch NFT offers by NFT ID
-  async getNFTOffers(nft_id: string): Promise<NFTOffers> {
+  async getNFTOffers(nft_id: string) {
     try {
       await this._checkConnection();
 
-      const sell_offers: NFTOffer[] = await this._xrplClient
-        .request({
-          command: "nft_sell_offers",
-          nft_id: nft_id,
-        })
-        .then((r) => r.result.offers)
-        .catch((e) => []);
+      const {
+        result: { offers: sell_offers },
+      } = await this._xrplClient.request({
+        command: "nft_sell_offers",
+        nft_id: nft_id,
+      });
 
-      const buy_offers: NFTOffer[] = await this._xrplClient
-        .request({
-          command: "nft_buy_offers",
-          nft_id: nft_id,
-        })
-        .then((r) => r.result.offers)
-        .catch((e) => []);
+      const {
+        result: { offers: buy_offers },
+      } = await this._xrplClient.request({
+        command: "nft_buy_offers",
+        nft_id: nft_id,
+      });
 
       return {
-        sell_offers: sell_offers,
-        buy_offers: buy_offers,
+        sell_offers,
+        buy_offers,
       };
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }
 
   // Accept NFT Offer
-  async acceptOffer(
-    offer: NFTOffer | string,
-    options: AcceptOfferOptions
-  ): Promise<TxResponse> {
+  async acceptOffer(offer: NFTOffer | string, options: AcceptOfferOptions) {
     try {
       const wallet = this._checkWalletConnection();
 
@@ -92,16 +87,15 @@ export class SologenicNFTTrader extends SologenicBaseModule {
       const signed_tx = await this._signTransaction(accept_offer_tx, {
         autofill: true,
       });
-      const result = await this._submitSignedTxToLedger(signed_tx);
 
-      return result;
-    } catch (e: any) {
+      return await this._submitSignedTxToLedger(signed_tx);
+    } catch (e) {
       throw e;
     }
   }
 
   // Use Brokered mode
-  async brokerNFTOffers(args: BrokeredModeArgs): Promise<TxResponse> {
+  async brokerNFTOffers(args: BrokeredModeArgs) {
     try {
       const wallet = this._checkWalletConnection();
 
@@ -129,19 +123,14 @@ export class SologenicNFTTrader extends SologenicBaseModule {
         autofill: true,
       });
 
-      const result = await this._submitSignedTxToLedger(signed_tx);
-
-      return result;
-    } catch (e: any) {
+      return await this._submitSignedTxToLedger(signed_tx);
+    } catch (e) {
       throw e;
     }
   }
 
   // Put NFT for sale
-  async setNFTForSale(
-    nft_id: string,
-    options: NFTSaleOptions
-  ): Promise<TxResponse> {
+  async setNFTForSale(nft_id: string, options: NFTSaleOptions) {
     try {
       const wallet = this._checkWalletConnection();
 
@@ -160,19 +149,19 @@ export class SologenicNFTTrader extends SologenicBaseModule {
             }
           : {}),
       };
-      const signed_tx: string = await this._signTransaction(sell_offer_tx, {
+
+      const signed_tx = await this._signTransaction(sell_offer_tx, {
         autofill: true,
       });
-      const result: TxResponse = await this._submitSignedTxToLedger(signed_tx);
 
-      return result;
+      return await this._submitSignedTxToLedger(signed_tx);
     } catch (e: any) {
       throw e;
     }
   }
 
   // Place bid on NFT
-  async placeBidOnNFT(nft_id: string, options: Bid): Promise<TxResponse> {
+  async placeBidOnNFT(nft_id: string, options: Bid) {
     try {
       const wallet = this._checkWalletConnection();
 
@@ -192,16 +181,15 @@ export class SologenicNFTTrader extends SologenicBaseModule {
       const signed_tx: string = await this._signTransaction(bid_tx, {
         autofill: true,
       });
-      const result: TxResponse = await this._submitSignedTxToLedger(signed_tx);
 
-      return result;
-    } catch (e: any) {
+      return await this._submitSignedTxToLedger(signed_tx);
+    } catch (e) {
       throw e;
     }
   }
 
   // Cancel NFT Offer
-  async cancelNFTOffers(offers: string[]): Promise<TxResponse> {
+  async cancelNFTOffers(offers: string[]) {
     try {
       const wallet = this._checkWalletConnection();
 
@@ -214,56 +202,44 @@ export class SologenicNFTTrader extends SologenicBaseModule {
       const signed_tx: string = await this._signTransaction(cancel_tx, {
         autofill: true,
       });
-      const result: TxResponse = await this._submitSignedTxToLedger(signed_tx);
 
-      return result;
-    } catch (e: any) {
+      return await this._submitSignedTxToLedger(signed_tx);
+    } catch (e) {
       throw e;
     }
   }
 
   // Retrieve Collection Trading Data
-  async getCollectionTradingData(
-    address: string
-  ): Promise<CollectionTradingData> {
+  async getCollectionTradingData(address: string) {
     try {
-      const trading_data: Promise<CollectionTradingData> = await axios({
-        method: "get",
-        baseURL: `${this._baseURL}/${services["nfts"]}/collections/${address}`,
-      })
-        .then((r) => r.data.stats)
-        .catch((e) => {
-          throw e;
-        });
+      const {
+        data: { stats },
+      } = await axios.get<{ stats: CollectionTradingData }>(
+        `${this._baseURL}/${services["nfts"]}/collections/${address}`
+      );
 
-      return trading_data;
-    } catch (e: any) {
+      return stats;
+    } catch (e) {
       throw e;
     }
   }
 
   // Fetch NFT Trading History, this will only work for NFTs minted on the Sologenic Platform, or using the SologenicNFTManager
-  async getNFTTrades(
-    nft_id: string,
-    options?: NFTActionsOptions
-  ): Promise<NFTAction[]> {
+  async getNFTTrades(nft_id: string, options?: NFTActionsOptions) {
     try {
-      const trades: NFTAction[] = await axios({
-        method: "get",
-        baseURL: `${this._baseURL}/${services["nfts"]}/nfts/${nft_id}/actions`,
-        params: {
-          types: "nft_sold",
-          limit: options?.limit ? options.limit : 50,
-          ...(options?.before_id ? { before_id: options.before_id } : {}),
-        },
-      })
-        .then((r) => r.data)
-        .catch((e) => {
-          throw e;
-        });
+      const { data: trades } = await axios.get<NFTAction[]>(
+        `${this._baseURL}/${services["nfts"]}/nfts/${nft_id}/actions`,
+        {
+          params: {
+            types: "nft_sold",
+            limit: options?.limit ? options.limit : 50,
+            ...(options?.before_id ? { before_id: options.before_id } : {}),
+          },
+        }
+      );
 
       return trades;
-    } catch (e: any) {
+    } catch (e) {
       throw e;
     }
   }

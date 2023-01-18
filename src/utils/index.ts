@@ -40,7 +40,7 @@ export const services = {
   nfts: "nft-marketplace",
 };
 
-export const parseAmount = (amount: Amount): any => {
+export const parseAmount = (amount: Amount) => {
   let amount_fields: any = { value: 0, currency: "" };
 
   if (typeof amount === "string") {
@@ -58,7 +58,7 @@ export const validateOffersMatch = (
   sell_offer: NFTOffer,
   buy_offer: NFTOffer,
   broker_address?: string
-): void => {
+) => {
   if (sell_offer.flags !== 1) throw errors.sell_offer_invalid;
   if (buy_offer.flags === 1) throw errors.buy_offer_invalid;
 
@@ -82,18 +82,15 @@ export const validateOffersMatch = (
 };
 
 // Get Max Broker Fee
-export function getMaxBrokerFee(
-  sell_offer: NFTOffer,
-  buy_offer: NFTOffer
-): Amount {
+export function getMaxBrokerFee(sell_offer: NFTOffer, buy_offer: NFTOffer) {
   try {
     const parsedSell = parseAmount(sell_offer.amount);
     const parsedBuy = parseAmount(buy_offer.amount);
 
-    const bigSell: BigNumber = new BigNumber(parsedSell.amount.value);
-    const bigBuy: BigNumber = new BigNumber(parsedBuy.amount.value);
+    const bigSell = new BigNumber(parsedSell.amount.value);
+    const bigBuy = new BigNumber(parsedBuy.amount.value);
 
-    const difference: BigNumber = bigSell.minus(bigBuy);
+    const difference = bigSell.minus(bigBuy);
 
     const brokerFee: Amount =
       parsedSell.currency === "xrp"
@@ -105,20 +102,20 @@ export function getMaxBrokerFee(
           };
 
     return brokerFee;
-  } catch (e: any) {
+  } catch (e) {
     throw e;
   }
 }
 
 // Convert to Ripple Time
-export const convertToRippleTime = (time: number | Date | string): number => {
+export const convertToRippleTime = (time: number | Date | string) => {
   if (isNumber(time)) return unixTimeToRippleTime(time);
 
   return isoTimeToRippleTime(time);
 };
 
 // Helper function to convert to Hex
-export const toHex = (string: string): string => {
+export const toHex = (string: string) => {
   const s = unescape(encodeURIComponent(string));
   let h = "";
 
@@ -129,7 +126,7 @@ export const toHex = (string: string): string => {
   return h;
 };
 
-function unscrambleTaxon(taxon: number, tokenSeq: number): number {
+function unscrambleTaxon(taxon: number, tokenSeq: number) {
   return (taxon ^ (384160001 * tokenSeq + 2459)) % 4294967296;
 }
 
@@ -165,7 +162,7 @@ export const encodeNFTTokenID = (
   );
 };
 
-export async function getBase64(file: Buffer): Promise<any> {
+export async function getBase64(file: Buffer) {
   const fileReader = await import("file-type");
 
   const fileType: any = await fileReader.fileTypeFromBuffer(file);
@@ -179,7 +176,7 @@ export async function getAllAccountNFTS(
   client: Client,
   address: string,
   marker?: string
-): Promise<NFT[]> {
+) {
   try {
     var nfts: NFT[] = [];
 
@@ -209,7 +206,7 @@ export async function getAllAccountNFTS(
       });
 
     return nfts;
-  } catch (e: any) {
+  } catch (e) {
     console.log("E_GET_ACCOUNT_NFTS_UTILS =>", e);
     throw e;
   }
