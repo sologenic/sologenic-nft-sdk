@@ -131,8 +131,7 @@ export class SologenicBaseModule {
         const current_ledger_sequence =
           account_info.result.ledger_current_index;
 
-        if (!current_ledger_sequence)
-          throw errors.ledger_error("Current Ledger Sequence not found.");
+        if (!current_ledger_sequence) throw errors.index_not_found;
 
         const current_account_sequence =
           account_info.result.account_data.Sequence;
