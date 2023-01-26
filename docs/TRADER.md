@@ -1,6 +1,6 @@
 # Sologenic NFT Trader
 
-This library is to simplify the process of trading NFTS.
+This class was built to allow the Trading of NFTs on the XRP Ledger.
 
 DUE TO THE REQUIREMENTS OF USING THE WALLET SECRET, DO NOT USE THIS LIBRARY AT THE CLIENT SIDE !!!!!!!!!!
 
