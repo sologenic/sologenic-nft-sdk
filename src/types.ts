@@ -12,6 +12,10 @@ export type NFTCategoryType =
 
 export type Mode = "devnet" | "mainnet" | "testnet";
 
+export enum NFTStandard {
+  XLS20 = "xls20d",
+  XLS14 = "xls14d",
+}
 export interface AcceptOfferOptions {
   isBuy: boolean;
 }
@@ -149,7 +153,7 @@ export interface NFTClio {
 
 export interface FullNFTData {
   sologenic_info: NFTData | null;
-  xrpl_info: NFTClio;
+  xrpl_info?: NFTClio;
 }
 
 export interface SignTransactionOptions {
@@ -241,4 +245,26 @@ export interface Collection {
   issuer: string;
   nfts: NFTSlot[];
   [key: string]: unknown;
+}
+
+export interface CollectionMetadata {
+  address: string;
+  collection_name: string;
+  collection_uid: string;
+  created_at: string;
+  description: string;
+  minted_by: string;
+  minter: string;
+}
+
+export interface PublicCollection {
+  created_at: string;
+  id: string;
+  ipfs_cid: string;
+  issuer: string;
+  metadata: CollectionMetadata;
+  minter: string;
+  stats: CollectionTradingData;
+  updated_at: string;
+  verified: boolean;
 }

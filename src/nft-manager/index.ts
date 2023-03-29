@@ -15,6 +15,7 @@ import {
   NFTAction,
   FullNFTData,
   NFTClio,
+  NFTStandard,
 } from "../types";
 import { version } from "../../package.json";
 import { Transaction, TxResponse, NFTokenMint } from "xrpl";
@@ -65,39 +66,6 @@ export class SologenicNFTManager extends SologenicBaseModule {
       }
 
       throw errors.collection_not_set;
-    } catch (e: any) {
-      throw e;
-    }
-  }
-
-  async getNFTData(nft_id: string): Promise<FullNFTData> {
-    try {
-      await this._checkConnection();
-      await this._checkConnection("clio");
-
-      const nft_info = await this._clioClient.request({
-        command: "nft_info",
-        nft_id,
-      });
-
-      const nft_data: NFTData = await axios({
-        method: "get",
-        baseURL: `${this._baseURL}/${services.nfts}/nfts/${nft_id}`,
-      })
-        .then((r) => {
-          delete r.data.internal_id;
-          return r.data;
-        })
-        .catch((e) => {
-          if (e.response.status === 404) return null;
-
-          throw e;
-        });
-
-      return {
-        sologenic_info: nft_data,
-        xrpl_info: nft_info.result as NFTClio,
-      };
     } catch (e: any) {
       throw e;
     }

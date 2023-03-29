@@ -252,7 +252,7 @@ const result = await trader.cancelNFTOffers(offers);
 
 ### `getCollectionTradingData`
 
-An async functon that retrieves the collection trading data for an NFT collection stored on the Sologenic Databse. Trading stats include the `floor price`, the `nft count`, as well as the `traded volume`.
+An async functon that retrieves the collection trading data for an NFT collection stored on the Sologenic Database. Trading stats include the `floor price`, the `nft count`, as well as the `traded volume`.
 
 _Params_
 

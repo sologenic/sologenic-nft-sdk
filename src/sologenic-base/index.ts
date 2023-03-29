@@ -3,6 +3,11 @@ import {
   Mode,
   NFT,
   SignTransactionOptions,
+  FullNFTData,
+  NFTClio,
+  NFTData,
+  NFTStandard,
+  PublicCollection,
 } from "../types";
 import {
   Client,
@@ -15,6 +20,8 @@ import {
 import errors from "../utils/errors";
 import { clio_servers, getAllAccountNFTS, modes, toHex } from "../utils/index";
 import moment from "moment";
+import axios from "axios";
+import { services } from "../utils/index";
 
 export class SologenicBaseModule {
   protected _moduleName: string = "base";
@@ -66,6 +73,135 @@ export class SologenicBaseModule {
     setInterval(this._setAuthHeaders.bind(this), 60000);
 
     return this._wallet;
+  }
+
+  async getNFT(nft_id: string): Promise<FullNFTData> {
+    try {
+      await this._checkConnection();
+      await this._checkConnection("clio");
+
+      const nft_info = await this._clioClient.request({
+        command: "nft_info",
+        nft_id,
+      });
+
+      const nft_data: NFTData = await axios({
+        method: "get",
+        baseURL: `${this._baseURL}/${services.nfts}/nfts/${nft_id}`,
+      })
+        .then((r) => {
+          delete r.data.internal_id;
+          return r.data;
+        })
+        .catch((e) => {
+          if (e.response.status === 404) return null;
+
+          throw e;
+        });
+
+      return {
+        sologenic_info: nft_data,
+        xrpl_info: nft_info.result as NFTClio,
+      };
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
+  async getMultipleNFTS(nft_ids: string[]): Promise<FullNFTData[]> {
+    try {
+      await this._checkConnection();
+      await this._checkConnection("clio");
+
+      return await axios({
+        method: "post",
+        url: `${this._baseURL}/${services.nfts}/nfts`,
+        data: nft_ids,
+      })
+        .then((r) => {
+          const n: FullNFTData[] = r.data.ids.map(async (x: any) => {
+            let xrpl_info;
+
+            if (x.standard === NFTStandard.XLS20) {
+              try {
+                const nft_info = await this._clioClient.request({
+                  command: "nft_info",
+                  nft_id: x.id,
+                });
+
+                xrpl_info = nft_info.result;
+              } catch (e) {
+                console.log(e);
+              }
+            }
+
+            return { sologenic_info: x, xrpl_info };
+          });
+
+          return n;
+        })
+        .catch((e) => {
+          throw e;
+        });
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
+  async getCollection(collection_id: string): Promise<PublicCollection> {
+    try {
+      const c = await axios({
+        method: "get",
+        url: `${this._baseURL}/${services.nfts}/collections/${collection_id}`,
+      });
+
+      return c.data;
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
+  async getMultipleCollections(
+    collection_ids: string[]
+  ): Promise<PublicCollection[]> {
+    try {
+      if (collection_ids.length > 20)
+        throw new Error("Maximum collection_ids per request: 20");
+
+      const encoded = window
+        ? window.btoa(JSON.stringify(collection_ids))
+        : Buffer.from(JSON.stringify(collection_ids)).toString("base64");
+
+      const colls = await axios({
+        method: "get",
+        url: `${this._baseURL}/${services.nfts}/collections`,
+        params: {
+          collection_ids: encoded,
+        },
+      });
+
+      return colls.data;
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
+  async countNFTCopies(nft_id: string): Promise<number> {
+    try {
+      const data = await this.getNFT(nft_id);
+
+      const count = await axios({
+        method: "get",
+        url: `${this._baseURL}/${services.nfts}/count`,
+        params: {
+          md5_hash: data.sologenic_info?.md5_hash,
+        },
+      });
+
+      return count.data;
+    } catch (e: any) {
+      throw e;
+    }
   }
 
   async getAccountNFTS(account?: string): Promise<NFT[]> {
